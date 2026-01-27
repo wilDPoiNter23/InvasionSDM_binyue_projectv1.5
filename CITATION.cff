@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Coastal Reclamation Impact on Invasive Species Distribution: A Species Distribution Modeling Approach"
+version: 1.0.0
+date-released: 2026-01-23
+authors:
+  - family-names: "Kang"
+    given-names: "Binyue"
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+repository-code: "https://github.com/yourusername/InvasionSDM"
+keywords:
+  - "species distribution modeling"
+  - "invasive species"
+  - "coastal reclamation"
+  - "biomod2"
+  - "GAM"
+  - "SEM"
+  - "ecological modeling"
+license: MIT
+abstract: >
+  This repository contains the complete workflow for analyzing the impact of 
+  coastal reclamation on invasive species distribution using Species Distribution 
+  Modeling (SDM). The project processes data for 800+ invasive plant species across 
+  global coastal cities and builds ensemble SDM models to assess invasion risk.
