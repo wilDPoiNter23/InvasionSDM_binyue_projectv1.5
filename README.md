@@ -14,41 +14,31 @@ This repository contains the complete workflow for analyzing the impact of coast
 
 ## 📊 Project Statistics
 
-- **Total Code:** 15,379 lines of R code
 - **Species Modeled:** 800+ invasive plant species
 - **Coastal Cities:** 108 cities globally
-- **Environmental Variables:** Climate, soil, marine, anthropogenic, topographic factors
-- **Modeling Algorithms:** GLM, Random Forest, MaxEnt
 - **Ensemble Methods:** EMmean, EMmedian
 
 ## 📁 Repository Structure
 
 ```
 InvasionSDM/
-├── code_clean/                          # Clean, scientifically-named code
-│   ├── 00_setup/                        # Environment setup (1 file)
-│   ├── 01_data_preparation/             # Data integration (5 files)
-│   ├── 02_species_data/                 # GBIF data acquisition (4 files)
-│   ├── 03_environmental_data/           # Environmental processing (12 files)
-│   ├── 04_sdm_modeling/                 # SDM batch modeling (9 files)
-│   ├── 05_results_analysis/             # Model evaluation (3 files)
-│   └── 06_statistical_analysis/         # GAM/SEM analysis (8 files)
+├── code/
+│   ├── local_analysis/          # Analysis workflow for local workstations
+│   │   ├── 00_setup/            # Package installation and setup
+│   │   ├── 01_data_prep/        # Data cleaning and integration
+│   │   ├── 02_species/          # Species occurrence data acquisition
+│   │   ├── 03_env_data/         # Environmental variable processing
+│   │   ├── 04_sdm_viz/          # Visualization of SDM results
+│   │   ├── 05_results/          # Model performance evaluation
+│   │   └── 06_stats/            # Statistical analysis (GAM, SEM)
+│   │
+│   └── hpc_jobs/                # Batch scripts for HPC cluster computing
+│       └── [files for batch modeling]
 │
-├── scripts_clean/                       # Shell scripts for HPC
-│   ├── submit_slurm_job.sh
-│   ├── submit_batch_modeling.sh
-│   └── batch_rename_files.sh
-│
-├── docs/                                # Documentation
-│   ├── InvasionSDM_Workflow_Documentation.md
-│   ├── Project_Cleanup_Guide.md
-│   ├── Code_Statistics_Report.md
-│   └── project_structure.ini
-│
-├── code/                                # Original code (archived)
-├── data/                                # Data directory
-├── results/                             # Results directory
-└── README.md                            # This file
+├── docs/                        # Project documentation
+├── data/                        # Input data (not included in repo)
+├── results/                     # Analysis outputs
+└── README.md                    # Project overview
 ```
 
 ## 🚀 Quick Start
@@ -57,76 +47,66 @@ InvasionSDM/
 
 - R >= 4.5.2
 - Linux HPC with SLURM (for Phase 4 batch modeling)
-- Required R packages (see `code_clean/00_setup/00_install_packages.R`)
 
 ### Installation
 
 ```r
 # Install all required packages
-source("code_clean/00_setup/00_install_packages.R")
+source("code/local_analysis/00_setup/00_install_packages.R")
 ```
 
 ### Workflow Execution
 
-The workflow consists of 6 phases that should be executed sequentially:
+The workflow consists of sequential phases.
 
 #### Phase 1: Data Preparation
 ```r
-# Integrate GloNAF invasion data with reclamation cities
-source("code_clean/01_data_preparation/01_prepare_glonaf_invasion_data.R")
-source("code_clean/01_data_preparation/01_define_coastal_cities.R")
-source("code_clean/01_data_preparation/01_process_reclamation_data.R")
-source("code_clean/01_data_preparation/01_clean_variable_names.R")
-source("code_clean/01_data_preparation/01_correlation_analysis.R")
+# Data integration and cleaning
+source("code/local_analysis/01_data_prep/01_prepare_glonaf_invasion_data.R")
+source("code/local_analysis/01_data_prep/01_define_coastal_cities.R")
+source("code/local_analysis/01_data_prep/01_process_reclamation_data.R")
+source("code/local_analysis/01_data_prep/01_clean_variable_names.R")
+source("code/local_analysis/01_data_prep/01_correlation_analysis.R")
 ```
 
 #### Phase 2: Species Data Acquisition
 ```r
-# Download species occurrence data from GBIF
-source("code_clean/02_species_data/02_download_gbif_occurrences.R")
-source("code_clean/02_species_data/02_generate_sql_queries.R")
-source("code_clean/02_species_data/02_create_richness_heatmap.R")
+# GBIF occurrence data
+source("code/local_analysis/02_species/02_download_gbif_occurrences.R")
+source("code/local_analysis/02_species/02_generate_sql_queries.R")
+source("code/local_analysis/02_species/02_create_richness_heatmap.R")
 ```
 
 #### Phase 3: Environmental Data Processing
 ```r
-# Process environmental variables
-source("code_clean/03_environmental_data/03_download_environmental_layers.R")
-source("code_clean/03_environmental_data/03_resample_environmental_layers.R")
-source("code_clean/03_environmental_data/03_combine_environmental_stack.R")
-source("code_clean/03_environmental_data/03_select_variables_vif.R")
-source("code_clean/03_environmental_data/03_retain_anthropogenic_variables.R")
+source("code/local_analysis/03_env_data/03_download_environmental_layers.R")
+source("code/local_analysis/03_env_data/03_resample_environmental_layers.R")
+source("code/local_analysis/03_env_data/03_combine_environmental_stack.R")
+source("code/local_analysis/03_env_data/03_select_variables_vif.R")
+source("code/local_analysis/03_env_data/03_retain_anthropogenic_variables.R")
 ```
 
-#### Phase 4: SDM Modeling (HPC Required)
-```bash
-# Submit batch modeling job to SLURM
-cd scripts_clean
-sbatch submit_batch_modeling.sh
+#### Phase 4: SDM Modeling (High-Performance Computing)
+_These scripts are designed for batch processing on an HPC cluster._
+```r
+# Main batch modeling script
+# code/hpc_jobs/04_batch_sdm_modeling.R
 ```
 
 #### Phase 5: Results Analysis
 ```r
-# Evaluate model performance
-source("code_clean/05_results_analysis/05_evaluate_model_performance.R")
-source("code_clean/05_results_analysis/05_analyze_continental_risk.R")
+source("code/local_analysis/05_results/05_evaluate_model_performance.R")
+source("code/local_analysis/05_results/05_analyze_continental_risk.R")
 ```
 
 #### Phase 6: Statistical Analysis
 ```r
-# GAM and SEM analysis
-source("code_clean/06_statistical_analysis/06_gam_reclamation_risk_analysis.R")
-source("code_clean/06_statistical_analysis/06_pdp_sem_analysis.R")
-source("code_clean/06_statistical_analysis/06_visualize_city_details.R")
+source("code/local_analysis/06_stats/06_gam_reclamation_risk_analysis.R")
+source("code/local_analysis/06_stats/06_pdp_sem_analysis.R")
+source("code/local_analysis/06_stats/06_visualize_city_details.R")
 ```
 
-## 📖 Documentation
-
-- **[Workflow Documentation](docs/InvasionSDM_Workflow_Documentation.md)** - Complete workflow description with file purposes and dependencies
-- **[Cleanup Guide](docs/Project_Cleanup_Guide.md)** - Guide for maintaining clean code
-- **[Code Statistics](docs/Code_Statistics_Report.md)** - Detailed code statistics and analysis
-
-## 🔬 Methodology
+## � Methodology
 
 ### Species Distribution Modeling
 - **Algorithms:** GLM, Random Forest (default settings), MaxEnt
@@ -188,8 +168,7 @@ If you use this code, please cite:
 ## 📧 Contact
 
 **Author:** Binyue Kang  
-**Institution:** [Your institution]  
-**Email:** [Your email]
+**Institution:** Nankai University and University of Glasgow
 
 ## 📄 License
 
