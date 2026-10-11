@@ -1,0 +1,25 @@
+# LEGACY environment startup reference; never source automatically.
+# Original SHA256: e160c4debf01bdefc0a5e5fab20d39769e28ea2cd510ed594d03bc65864d7e1c
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+# User specific aliases and functions
+export PATH=${PRIVATE_EXTERNAL_PATH}
+
+
+export LD_LIBRARY_PATH=${PRIVATE_EXTERNAL_PATH}
+
+
+export PKG_CONFIG_PATH=${PRIVATE_EXTERNAL_PATH}
+
+
+export CMAKE_PREFIX_PATH=${PRIVATE_EXTERNAL_PATH}
+
+
+export GTEST_ROOT=${PRIVATE_EXTERNAL_PATH}
+
+export ACLOCAL_PATH=${PRIVATE_EXTERNAL_PATH}
