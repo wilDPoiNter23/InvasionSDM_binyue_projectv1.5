@@ -1,0 +1,41 @@
+predictor,group,provider,resolution,period,units,included_in_github,evidence
+BUILT_S_E2025_2.5min,anthropogenic,Provider/release TO VERIFY,Aligned 2.5 arcmin,E2025 filename,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+GDP2020_2.5min,anthropogenic,Provider/release TO VERIFY,Aligned 2.5 arcmin,2020,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+ID,identifier anomaly,Later repaired model metadata,Not an environmental raster,Later product only; result-sensitive issue,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+Pop2020_2.5min,anthropogenic,Provider/release TO VERIFY,Aligned 2.5 arcmin,2020,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+VIIRS_2023_2.5min,anthropogenic,Provider/release TO VERIFY,Aligned 2.5 arcmin,2023 filename,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+aspect,topography / TO VERIFY,ETOPO / provider TO VERIFY,Aligned 2.5 arcmin,TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+bdod_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing TO VERIFY,Aligned 2.5 arcmin,Filename 2024; acquisition/release TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+cfvo_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing TO VERIFY,Aligned 2.5 arcmin,Filename 2024; acquisition/release TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+nitrogen_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing TO VERIFY,Aligned 2.5 arcmin,Filename 2024; acquisition/release TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+ocd_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing TO VERIFY,Aligned 2.5 arcmin,Filename 2024; acquisition/release TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+phh2o_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing TO VERIFY,Aligned 2.5 arcmin,Filename 2024; acquisition/release TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+reclamation_raster,anthropogenic,Author reclamation,Aligned 2.5 arcmin,2000-2020 manuscript period,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+salinity_mean,marine/coastal,HYCOM / author preprocessing TO VERIFY,Aligned 2.5 arcmin,TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+salinity_range,marine/coastal,HYCOM / author preprocessing TO VERIFY,Aligned 2.5 arcmin,TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+sand_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing TO VERIFY,Aligned 2.5 arcmin,Filename 2024; acquisition/release TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+silt_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing TO VERIFY,Aligned 2.5 arcmin,Filename 2024; acquisition/release TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+slope,topography / TO VERIFY,ETOPO / provider TO VERIFY,Aligned 2.5 arcmin,TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+soc_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing TO VERIFY,Aligned 2.5 arcmin,Filename 2024; acquisition/release TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+temperature_mean,marine/coastal,HYCOM / author preprocessing TO VERIFY,Aligned 2.5 arcmin,TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+temperature_range,marine/coastal,HYCOM / author preprocessing TO VERIFY,Aligned 2.5 arcmin,TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_1,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_10,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_11,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_12,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_13,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_14,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_15,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_16,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_17,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_18,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_19,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_2,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_3,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_4,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_5,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_6,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_7,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_8,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_bio_9,climate,WorldClim,2.5 arcmin,1970-2000 (release TO VERIFY),TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
+wc2.1_2.5m_elev,topography / TO VERIFY,ETOPO / provider TO VERIFY,Aligned 2.5 arcmin,TO VERIFY,TO VERIFY,No data; metadata only,Saved model metadata; membership does not imply universal predictor use
