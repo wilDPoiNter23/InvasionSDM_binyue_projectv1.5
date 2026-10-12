@@ -1,24 +1,16 @@
-# Loads paths, never installs packages, creates directories, or runs an analysis.
-project <- Sys.getenv("INVASIONSDM_PROJECT_ROOT", unset = getwd())
-project <- normalizePath(project, mustWork = TRUE)
-cfg <- Sys.getenv("INVASIONSDM_CONFIG", file.path(project, "config", "config.local.R"))
-if (!file.exists(cfg)) stop("Missing local configuration: copy config/config.example.R to config/config.local.R and set external paths")
-source(cfg, local = .GlobalEnv)
-if (!exists("PATHS") || !is.list(PATHS)) stop("Configuration must define a named PATHS list")
+# Load external data and output paths.
+project <- normalizePath(Sys.getenv("INVASIONSDM_PROJECT_ROOT", getwd()), mustWork=TRUE)
+config_file <- Sys.getenv("INVASIONSDM_CONFIG", file.path(project, "config", "config.local.R"))
+if (!file.exists(config_file)) stop("Copy config/config.example.R to config/config.local.R and set the data paths.")
+source(config_file, local=.GlobalEnv)
 publication_path <- function(alias, ...) {
-  p <- PATHS[[alias]]
-  if (is.null(p) || length(p) != 1L || is.na(p) || !nzchar(p) || grepl("SET_EXTERNAL", p))
-    stop("Configure path alias: ", alias)
-  file.path(p, ...)
-}
-publication_require_workspace <- function(required) {
-  absent <- required[!vapply(required, exists, logical(1), envir = .GlobalEnv, inherits = FALSE)]
-  if (length(absent) && exists("WORKSPACE_RDS") && file.exists(WORKSPACE_RDS)) {
-    objects <- readRDS(WORKSPACE_RDS)
-    if (!is.list(objects) || is.null(names(objects))) stop("WORKSPACE_RDS must contain a named list")
-    list2env(objects, envir = .GlobalEnv)
-    absent <- required[!vapply(required, exists, logical(1), envir = .GlobalEnv, inherits = FALSE)]
+  base <- PATHS[[alias]]
+  if (is.null(base) || length(base)!=1L || is.na(base) || !nzchar(base) || grepl("SET_PATH",base))
+    stop("Set the configuration path: ", alias)
+  path <- file.path(base, ...)
+  if (alias == "OUTPUT_ROOT") {
+    parent <- if (grepl("\\.[A-Za-z0-9]{1,6}$", basename(path))) dirname(path) else path
+    dir.create(parent, recursive=TRUE, showWarnings=FALSE)
   }
-  if (length(absent)) stop("Historical workspace dependency unresolved: ", paste(absent, collapse = ", "),
-                           ". See docs/REPRODUCIBILITY.md; do not invent these objects.")
+  path
 }

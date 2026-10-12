@@ -1,0 +1,40 @@
+predictor,group,provider,resolution,period,units
+BUILT_S_E2025_2.5min,anthropogenic,Provider/release not specified,Aligned 2.5 arcmin,E2025 filename,not specified
+GDP2020_2.5min,anthropogenic,Provider/release not specified,Aligned 2.5 arcmin,2020,not specified
+Pop2020_2.5min,anthropogenic,Provider/release not specified,Aligned 2.5 arcmin,2020,not specified
+VIIRS_2023_2.5min,anthropogenic,Provider/release not specified,Aligned 2.5 arcmin,2023 filename,not specified
+aspect,topography / not specified,ETOPO / provider not specified,Aligned 2.5 arcmin,not specified,not specified
+bdod_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing not specified,Aligned 2.5 arcmin,Filename 2024; acquisition/release not specified,not specified
+cfvo_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing not specified,Aligned 2.5 arcmin,Filename 2024; acquisition/release not specified,not specified
+nitrogen_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing not specified,Aligned 2.5 arcmin,Filename 2024; acquisition/release not specified,not specified
+ocd_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing not specified,Aligned 2.5 arcmin,Filename 2024; acquisition/release not specified,not specified
+phh2o_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing not specified,Aligned 2.5 arcmin,Filename 2024; acquisition/release not specified,not specified
+reclamation_raster,anthropogenic,Author reclamation,Aligned 2.5 arcmin,2000-2020 manuscript period,not specified
+salinity_mean,marine/coastal,HYCOM / author preprocessing not specified,Aligned 2.5 arcmin,not specified,not specified
+salinity_range,marine/coastal,HYCOM / author preprocessing not specified,Aligned 2.5 arcmin,not specified,not specified
+sand_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing not specified,Aligned 2.5 arcmin,Filename 2024; acquisition/release not specified,not specified
+silt_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing not specified,Aligned 2.5 arcmin,Filename 2024; acquisition/release not specified,not specified
+slope,topography / not specified,ETOPO / provider not specified,Aligned 2.5 arcmin,not specified,not specified
+soc_mean_2024_2_5min_aligned,soil,ISRIC / author preprocessing not specified,Aligned 2.5 arcmin,Filename 2024; acquisition/release not specified,not specified
+temperature_mean,marine/coastal,HYCOM / author preprocessing not specified,Aligned 2.5 arcmin,not specified,not specified
+temperature_range,marine/coastal,HYCOM / author preprocessing not specified,Aligned 2.5 arcmin,not specified,not specified
+wc2.1_2.5m_bio_1,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_10,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_11,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_12,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_13,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_14,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_15,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_16,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_17,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_18,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_19,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_2,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_3,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_4,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_5,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_6,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_7,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_8,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_bio_9,climate,WorldClim,2.5 arcmin,1970-2000 (release not specified),not specified
+wc2.1_2.5m_elev,topography / not specified,ETOPO / provider not specified,Aligned 2.5 arcmin,not specified,not specified

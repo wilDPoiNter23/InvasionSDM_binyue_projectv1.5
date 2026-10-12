@@ -1,0 +1,61 @@
+variable,description,units,missing_values
+city,City-level city; see predictor dictionary or source table,see source table,NA
+risk,Suitability-derived city response; legacy column name,dimensionless,NA
+wc2.1_2.5m_bio_1,City-level wc2.1_2.5m_bio_1; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_10,City-level wc2.1_2.5m_bio_10; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_11,City-level wc2.1_2.5m_bio_11; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_12,City-level wc2.1_2.5m_bio_12; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_13,City-level wc2.1_2.5m_bio_13; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_14,City-level wc2.1_2.5m_bio_14; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_15,City-level wc2.1_2.5m_bio_15; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_16,City-level wc2.1_2.5m_bio_16; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_17,City-level wc2.1_2.5m_bio_17; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_18,City-level wc2.1_2.5m_bio_18; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_19,City-level wc2.1_2.5m_bio_19; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_2,City-level wc2.1_2.5m_bio_2; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_3,City-level wc2.1_2.5m_bio_3; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_4,City-level wc2.1_2.5m_bio_4; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_5,City-level wc2.1_2.5m_bio_5; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_6,City-level wc2.1_2.5m_bio_6; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_7,City-level wc2.1_2.5m_bio_7; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_8,City-level wc2.1_2.5m_bio_8; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_bio_9,City-level wc2.1_2.5m_bio_9; see predictor dictionary or source table,see source table,NA
+bdod_mean_2024_2_5min_aligned,City-level bdod_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+cfvo_mean_2024_2_5min_aligned,City-level cfvo_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+clay_mean_2024_2_5min_aligned,City-level clay_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+nitrogen_mean_2024_2_5min_aligned,City-level nitrogen_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+ocd_mean_2024_2_5min_aligned,City-level ocd_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+phh2o_mean_2024_2_5min_aligned,City-level phh2o_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+sand_mean_2024_2_5min_aligned,City-level sand_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+silt_mean_2024_2_5min_aligned,City-level silt_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+soc_mean_2024_2_5min_aligned,City-level soc_mean_2024_2_5min_aligned; see predictor dictionary or source table,see source table,NA
+BUILT_S_E2025_2.5min,City-level BUILT_S_E2025_2.5min; see predictor dictionary or source table,see source table,NA
+GDP2020_2.5min,City-level GDP2020_2.5min; see predictor dictionary or source table,see source table,NA
+Pop2020_2.5min,City-level Pop2020_2.5min; see predictor dictionary or source table,see source table,NA
+VIIRS_2023_2.5min,City-level VIIRS_2023_2.5min; see predictor dictionary or source table,see source table,NA
+aspect,City-level aspect; see predictor dictionary or source table,see source table,NA
+slope,City-level slope; see predictor dictionary or source table,see source table,NA
+wc2.1_2.5m_elev,City-level wc2.1_2.5m_elev; see predictor dictionary or source table,see source table,NA
+salinity_mean,City-level salinity_mean; see predictor dictionary or source table,see source table,NA
+salinity_range,City-level salinity_range; see predictor dictionary or source table,see source table,NA
+temperature_mean,City-level temperature_mean; see predictor dictionary or source table,see source table,NA
+temperature_range,City-level temperature_range; see predictor dictionary or source table,see source table,NA
+reclamation_area,Reclaimed land area used by the GAM,ha,NA
+Land_Use_Types,City-level Land_Use_Types; see predictor dictionary or source table,see source table,NA
+Regions,Regional group,category,NA
+Latitude,City-level Latitude; see predictor dictionary or source table,see source table,NA
+Longitude,City-level Longitude; see predictor dictionary or source table,see source table,NA
+risk_class,City response class,category,NA
+climate_zone,City-level climate_zone; see predictor dictionary or source table,see source table,NA
+area_km2,City area,km2,NA
+reclamation_level,City-level reclamation_level; see predictor dictionary or source table,see source table,NA
+reclamation_level_manual,City-level reclamation_level_manual; see predictor dictionary or source table,see source table,NA
+log_city_area,City-level log_city_area; see predictor dictionary or source table,see source table,NA
+anthro_pc1,Human-predictor PC1 score,standardized score,NA
+climate_pc1,Climate PC1 score,standardized score,NA
+soil_pc1,Soil PC1 score,standardized score,NA
+marine_pc1,Marine PC1 score,standardized score,NA
+geom_pc1,Topographic PC1 score,standardized score,NA
+recl_frac,City-level recl_frac; see predictor dictionary or source table,see source table,NA
+log_recl,City-level log_recl; see predictor dictionary or source table,see source table,NA
+area_ratio,Provided area-ratio field,see source table,NA

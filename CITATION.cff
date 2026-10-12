@@ -12,6 +12,5 @@ keywords:
   - "GAM"
   - "SEM"
 abstract: >
-  Structured analysis implementations and provenance metadata for global invasive-plant
-  suitability and coastal-city analyses. Historical lineage and final statistical
-  source limitations are documented in the repository.
+  Code for species distribution modelling, coastal-city comparisons and
+  PCA, SEM and GAM analyses of invasive-plant suitability.

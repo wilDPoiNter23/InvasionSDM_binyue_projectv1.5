@@ -1,4 +1,4 @@
-# Private configuration and integration working material
+# Private configuration and working files
 working/
 config/config.local.R
 .Renviron

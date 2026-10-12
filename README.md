@@ -1,37 +1,40 @@
 # Coastal reclamation and invasive-plant suitability
 
-This publication branch contains full recovered historical source for reviewer inspection, configured public copies, original-source snapshots and provenance. **Source coverage is substantially complete; full result reproduction is not yet established.**
+This repository contains the code used to model the global distribution of invasive vascular plants and to examine how predicted invasion suitability varies across coastal reclamation and urban environmental gradients.
 
-[Code completeness audit](docs/CODE_COMPLETENESS_AUDIT.md) · [Manuscript coverage matrix](metadata/manuscript_code_coverage.csv) · [Original source hashes](metadata/source_recovery_manifest.csv) · [Scientific expression validation](metadata/original_scientific_comparison.csv)
+The workflow links species occurrences and environmental predictors to species distribution models, multispecies suitability, city-level comparisons, PCA, SEM and scale-dependent GAMs. The environment-only analysis is a planned sensitivity test and is still in progress.
 
-## Inspect the real implementations
+## Contents
 
-| Analysis | Complete real source | Version boundary |
-|---|---|---|
-| SDM, variable selection and projection | [0401 batch](code/04_sdm/historical/real_sources/0401batch_modeling_config.r), [040101](code/04_sdm/historical/real_sources/040101batch2.0.r), [040102](code/04_sdm/historical/real_sources/040102restbatch.r), [0402](code/04_sdm/historical/real_sources/0402simple_batch.r) | Full historical variants; exact accepted execution version heterogeneous/unresolved |
-| Multispecies index | [0405Allstack](code/05_projection_and_index/real_sources/0405Allstack.r), [research index](code/05_projection_and_index/real_sources/040501REsearch.r) | Exact submitted normalized2.0 writer remains unresolved |
-| City/zone contrasts | [0603](code/06_city_extraction/real_sources/0603reclaim_analysis.r), [buffers](code/06_city_extraction/real_sources/0407buffer_city_compare.r) | Original and boundary-recheck variants kept separately |
-| Manuscript PCA loading table | [060501](code/07_pca_sem/real_sources/060501final_pc_table.r) | Includes reclamation/aspect; mean imputation |
-| Final recheck PCA scores and GAM dispatch | [010303](code/08_gam/real_sources/010303_rerun_gam_after_boundary_update.R) | Excludes reclamation/aspect from those PCA groups; complete cases |
-| Reported scale-dependent GAM | [060503 full source](code/08_gam/real_sources/060503scale_dependentEffect.r) | Actual raw-area tensor includes marine; historical header conflicts with expressions |
-| Matching SEM structure | [Piecewise original](code/07_pca_sem/real_sources/piecewise_sem_historical.R), [preprocessing original](archive/original_sources/local/sem_preprocessing_damaged.R.txt) | Original fitting input interactive; preprocessing source is damaged |
-| SEM coefficients/city effects | [060502](code/09_figures/real_sources/060502indirect_re_caculated.r), [city plots](code/09_figures/real_sources/0604plot_cities_detial.r), [regional tables](code/09_figures/real_sources/060401cities_details_analysis.r) | Actual hard-coded coefficients preserved; fit object unresolved |
-| Evaluation, correlation and response figures | [Full source catalog](metadata/workflow_stages.csv) | Identified statistical/component code present; some manual assemblies unresolved |
+| Directory | Contents |
+|---|---|
+| code/01_data_preparation | Species, regional and reclamation inventories |
+| code/02_occurrence_processing | Occurrence download and cleaning |
+| code/03_predictors | Aligned predictor stacks and correlations |
+| code/04_sdm | Species model fitting, evaluation and projection |
+| code/05_invasion_suitability | Multispecies suitability aggregation |
+| code/06_city_analysis | City tables, reclaimed-land contrasts and buffer comparisons |
+| code/07_pca_sem | PCA loadings, SEM composites and city effects |
+| code/08_gam | Scale-dependent GAMs and conditional curves |
+| code/09_figures | Statistical figure components |
+| code/10_sensitivity | Spatial, raw-proxy and environment-only analyses |
+| config | External data and output paths |
+| metadata | Species roster, predictors and city-variable definitions |
+| docs | Workflow, data requirements and manuscript correspondence |
+| zenodo | Data-package plan and asset manifest |
 
-## Configuration and inspection
+## Start
 
-Copy `config/config.example.R` to ignored `config/config.local.R` and configure external paths. Preserve historical relative subtree layouts. `RECOVERED_CODE_SOURCE_ROOT` points to the recovered GAM dispatcher dependencies; `RECOVERED_CODE_ROOT` points to an external historical working/data directory. These are intentionally separate. Historical working-directory calls use configured paths; interactive selections and workspace dependencies remain visible rather than replaced with invented steps.
+Read [WORKFLOW](docs/WORKFLOW.md), obtain the files described in [DATA](docs/DATA.md), and copy config/config.example.R to config/config.local.R. Set the external data and output paths. Run scripts from the repository root. Model fitting is computationally expensive; downstream analyses can start from the supplied city tables and suitability raster.
 
-Run `Rscript scripts/verify_source_recovery.R .` for parse/expression checks only. `Rscript code/run_stage.R --list` lists actual sources; `--check` checks syntax/configuration. Whole-file execution is gated until historical inputs, workspace state and conflicting versions are resolved. No setup or validation command fits a model, submits jobs or downloads data.
+[METHODS_CODE_MAP](docs/METHODS_CODE_MAP.md) identifies the scripts for the manuscript analyses and figure components. The [data-package plan](zenodo/README.md) lists files intended for Zenodo; the deposit has not yet been published. Large inputs, fitted models and rasters are not stored in Git.
 
-Each source records original SHA-256 and publication modifications. [Full original snapshots](archive/original_sources/README.md) retain diagnostics/calculations. Seven damaged originals are full `.R.txt` inspection snapshots; they are not passing entrypoints. [Previous integration references](archive/prior_integration_references/README.md) are outside the main workflow. The missing scale-dependent source note is superseded.
+## Interpretation and reproduction
 
-## Limits before a reproducible final release
+The response is predicted invasion suitability, rather than observed establishment or propagule pressure. Scripts retain the original variable names, including risk in city tables. Use the supplied inputs and model-specific settings to reproduce the corresponding analysis. The loading-table PCA and GAM-score PCA use different variable groups; the archived SEM composite table is needed for the reported coefficient analysis. Conditional GAM sign changes are reported as area intervals rather than exact breakpoints.
 
-PCA loading and GAM-score definitions differ. SEM original fit input is unknown. Main Fig. 4 embeds an older image while statistics use recheck. ED Table 3 has no matching identified model. Supplementary Table 3 mixes versions; spatial outputs retain old n=83 results. **5,621.5 km² is a rounded lower endpoint of a P85–P90 sign-change bracket, not a fitted exact breakpoint.** See the coverage matrix for all 28 outputs and 15 stages.
+Manual arrangement of figure panels is separate from the component plots. This repository provides the statistical calculations and component-generation scripts.
 
-Large rasters, raw occurrences, fitted models and manuscript documents are external. Later 813-taxon, non-native and environment-only sensitivity implementations are supporting/historical archives and are not substituted for submitted analyses. No HPC files were deleted.
+## Citation
 
-## Citation and reuse
-
-Cite an author-approved commit/release when available. See [CITATION.cff](CITATION.cff) and [DATA_SOURCES.md](DATA_SOURCES.md). Licensing/dataset-release metadata still require author confirmation; no archival DOI is asserted.
+Use CITATION.cff to cite the code and cite each external dataset separately. The data-package DOI and release metadata will be added when the deposit is available.
