@@ -26,7 +26,9 @@ These commands run analyses; they are not data-download or syntax-check commands
 
 ## Environment-only sensitivity
 
-See ../code/10_sensitivity/environment_only/README.md. This analysis retains stored occurrence, pseudo-absence, cross-validation and model-option information while removing human predictors. The 814 taxa require 824 fitting tasks because ten taxa have paired clean full/environment-only fits. Final aggregation and comparison products are still pending; they are not replaced by earlier 813-taxon products.
+See ../code/10_sensitivity/environment_only/README.md. The paired analysis includes 684 accepted taxa and excludes 130 of the 814 candidates. It reuses stored designs, model options and accepted continuous FULL projections; human predictors are removed for the ENV fits. Ten candidate taxa required paired clean fits because ID was present. Continuous values are divided by 1000, with no per-species min–max normalization or new native-range mask. A species contributes to either mean only where both predictions are finite, giving identical per-cell denominators. The historical manuscript response remains separate.
+
+The production scripts generate two continuous means, a shared count raster, global/city comparisons and QC tables. The optional city association uses the existing GAM formula and archived covariates on common matched complete cases. No binary aggregate is required.
 
 ## R packages
 
@@ -34,4 +36,4 @@ Species modelling uses biomod2, terra, sf, usdm, spThin, dplyr and supporting pa
 
 ## Practical limits
 
-Use the archived score/composite tables for the manuscript's downstream results. Loading-table PCA includes reclamation and aspect where the GAM-score PCA does not. The precise SEM preprocessing selection is not fully specified, so fresh composite construction is not guaranteed to reproduce the reported coefficients. Regional plots and figure layouts may require the supplied source-data tables. No final environment-only comparison is claimed before the final products exist.
+Use the archived score/composite tables for the manuscript's downstream results. Loading-table PCA includes reclamation and aspect where the GAM-score PCA does not. The precise SEM preprocessing selection is not fully specified, so fresh composite construction is not guaranteed to reproduce the reported coefficients. Regional plots and figure layouts may require the supplied source-data tables. The historical main response and the paired sensitivity use different species sets and aggregation scales; retain their labels and contributor manifests.

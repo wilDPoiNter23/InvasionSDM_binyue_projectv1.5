@@ -27,7 +27,7 @@ Filename years identify the files used; they do not establish the acquisition pe
 - The PCA reference/loading input and the revised GAM score table are separate assets because their PCA definitions differ.
 - The archived SEM composite input contains Climate, socioeconomic, Soil, reclamation and Water. Its risk response has undergone the supplied preprocessing; do not assume it is on the same scale as the untransformed city suitability mean.
 - City-effect tables, curve/surface data, coefficient summaries, performance tables and spatial diagnostics support the figure components.
-- Species rosters and projection contributor manifests describe different sets. The metadata/species_list.csv file is a taxonomic roster of 813 names, not the contributor denominator of the manuscript raster. The environment-only roster has 814 taxa; the original contributor candidate manifest has 737 rows.
+- Species rosters and projection contributor manifests describe different sets. The metadata/species_list.csv file is a taxonomic roster of 813 names, not the contributor denominator of the manuscript raster. The sensitivity candidate roster has 814 taxa, with 684 final paired taxa and 130 excluded; the original contributor candidate manifest has 737 rows.
 
 See ../metadata/predictor_list.csv and ../metadata/city_variables.csv. The aligned predictor stack generally uses the 2.5-arc-minute grid. Preserve predictor order, units, missing values and per-species selections. ID is an identifier rather than an environmental predictor.
 
@@ -39,4 +39,4 @@ File-valued config entries can point directly to the downloaded package files. D
 
 ## Package completion
 
-Record a licence, creators, version, related manuscript/code identifiers and checksums for the selected deposit. Final 814-taxon rasters/comparison tables, the selected SEM input release, the final contributor list and several provider release identifiers remain to be supplied. No DOI, licence or completed sensitivity result is invented here.
+Record a licence, creators, version, related manuscript/code identifiers and checksums for the selected deposit. The paired sensitivity uses continuous predictions divided by 1000, with a common finite-pair species count and no new native-range mask. It remains separate from the normalized historical response. The deposit licence, some source versions and final figure-to-table selections require confirmation before uploading. No DOI or licence is assigned here.

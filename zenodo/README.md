@@ -1,25 +1,34 @@
-# Data package for the coastal reclamation analyses
+# Data package
 
-The planned Zenodo deposit will accompany the code and include the manuscript suitability raster, city analysis tables, PCA/GAM inputs, SEM composite and coefficient tables, model summaries, conditional-curve data and numeric source data for figures. These files are listed in zenodo_manifest.csv. No deposit DOI has been assigned in this repository.
+The deposit accompanies the code in this repository. Large suitability rasters and numeric source-data tables are staged separately; no upload or deposit DOI has been assigned.
 
 ## Manuscript data
 
-The manuscript response is the normalized2.0 suitability raster. Local and server copies contain identical bytes; only one copy is needed. Include the 108-city analysis table, land-zone comparison tables, loading-table input, GAM score table and the selected SEM composite input. The coefficient CSV contains the fourteen reported paths. Retain the species-projection contributor list with the raster so readers can identify its species set.
+The historical response is manuscript_suitability.tif, retaining the normalized2.0 raster used in the manuscript. Include the revised 108-city table, reclaimed/non-reclaimed comparison tables, separate PCA loading and GAM-score inputs, GAM summaries and conditional-curve data, archived SEM composite input and reported coefficient table. Retain model-performance summaries, predictor definitions and available figure/table source data.
 
-The 813-name taxonomic roster, original 737-row contributor manifest and 814-taxon sensitivity inventory are different lists. The roster is not a statement that every species contributed to the manuscript raster. Later aggregate alternatives are candidates until the deposited response version is selected.
+The taxonomic roster, projection contributor list and sensitivity species set describe different populations. They should remain labeled separately. The historical response is not replaced by the paired sensitivity raster.
 
-## Environment-only sensitivity
+## Paired environment-only sensitivity
 
-The environment-only analysis is in progress. Its final eight FULL/ENV aggregate rasters and final comparison tables are not yet available. The required sensitivity inventory and route policies are included as data-package candidates. Before deposit, replace private file paths in these tables with paths within the public package. Include the final model/projection manifest, retained taxon set, valid-species counts and threshold/mask definitions with the finished products.
+The final paired set contains 684 taxa from 814 candidates; 130 are excluded. The package contains:
 
-## External data
+- full_paired_684_mean_suitability.tif
+- env_only_paired_684_mean_suitability.tif
+- paired_684_valid_species_count.tif
+- full_vs_env_only_paired_684_summary.csv
+- paired_species_manifest.csv
+- paired_vs_excluded_species_summary.csv
 
-Obtain GBIF downloads, WorldClim, SoilGrids and other standard environmental products from their providers and cite the source releases. Do not duplicate them in this deposit. Geography and mixed-source processed inputs need redistribution review. Provider links and expected layer names are in ../docs/DATA.md.
+Supporting numeric files include city extractions, raster QC and the attrition detail table. The optional city GAM outputs retain the manuscript model definition and archived covariates. Continuous predictions are divided by 1000; means share the species with finite values in both groups within each cell. No new native-range mask or per-species minâ€“max normalization is applied. No binary aggregates are required.
 
-## Reading the manifest
+The package manifest uses root aliases to avoid machine-specific paths. FULL_SDM_ROOT identifies accepted baseline model/projection inputs; ENV_SOURCE_ROOT identifies the saved environment-only inputs; ATTRITION_INPUTS identifies the source roster, evaluation table and candidate inventory. Relocate these aliases before re-running with the separately retained model/projection collections. Keep model members and calibration/formatted inputs together.
 
-YES marks a planned deposit item, not an already uploaded file. OPTIONAL marks supporting material. NO_EXTERNAL_SOURCE marks provider data obtained elsewhere. TO_DECIDE marks items whose version, scope or redistribution terms need confirmation. Empty size/checksum fields denote pending outputs or directory collections whose transfer inventory is not yet complete.
+## External data and permissions
 
-The current_path column uses root aliases, not computer-specific locations: LOCAL_ANALYSIS_ROOT for local analysis files, MAIN_SDM_ROOT for species-model products, ENV_ONLY_ROOT for sensitivity files, PROJECT_RESULTS_ROOT and SUPPORTING_RESULTS_ROOT for derived products, and ZENODO_STAGING for small files prepared for deposit. Non-ASCII source filenames are URL-encoded. The proposed public filenames are the package destinations.
+Obtain GBIF downloads, WorldClim, SoilGrids, VIIRS, GDP/population, marine and reclamation provider inputs from their original sources. See ../docs/DATA.md for expected variables and citations. City-boundary redistribution and deposit licences require confirmation before upload. Staging does not grant redistribution rights.
 
-Retain original rasters, fitted models, projections, calibration/option files and execution metadata until the selected files are deposited or placed in cold storage and their checksums are checked. The present inventory does not authorize deletion.
+## Inventory
+
+zenodo_manifest.csv records the current location alias, package filename, byte size and SHA256 where available. YES identifies a planned deposit item, OPTIONAL supporting material, NO_EXTERNAL_SOURCE provider data, and TO_DECIDE a version or rights decision. Directory collections may lack a whole-collection checksum. Staged file checksums describe the exact package bytes, including any documented path-alias substitution in small manifests.
+
+Unique fitted models, calibration inputs and accepted continuous projections remain protected until an external cold archive is copied and checked against recorded hashes. Code inclusion or local staging alone does not authorize deletion of these scientific objects.

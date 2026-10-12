@@ -23,7 +23,7 @@ The table identifies statistical calculations and component plots. Final multi-p
 | Supplementary Table 2 | `code/07_pca_sem/pca_loadings.R` | PCA loading-table input |
 | Supplementary Table 5 | `code/09_figures/regional_effects.R` | Coefficient-based city table |
 | Supplementary Table 6 | `Deposited quartile cross-tab source data` | Pressure/leverage group counts and city names; table layout is supplied separately |
-| Environment-only sensitivity | `code/10_sensitivity/environment_only/` | Saved species model designs, predictor stacks and the 814-taxon inventory |
+| Environment-only sensitivity | `code/10_sensitivity/environment_only/` | Saved species model designs, predictor stacks and the paired inventory |
 
 ## Scientific details
 
@@ -31,6 +31,6 @@ The original land-zone figures and revised boundary calculations are separate sc
 
 Loading-table PCA uses mean imputation and includes reclamation/aspect in the relevant groups. GAM-score PCA uses complete cases and excludes those variables. The SEM fits the archived composite table, while the city-effect calculation uses the reported coefficients. These definitions are explicit in the scripts.
 
-The threshold scan identifies an interval between area quantiles; it does not estimate a unique breakpoint. Spatial and raw-proxy sensitivity scripts contain their own additional terms and may use different complete-case samples. The environment-only analysis remains in progress, with aggregation/comparison code to be added with the final products.
+The threshold scan identifies an interval between area quantiles; it does not estimate a unique breakpoint. Spatial and raw-proxy sensitivity scripts contain their own additional terms and may use different complete-case samples. The environment-only directory contains input freezing, aggregation, comparison, attrition and city-association scripts for the final 684-species paired set.
 
 Extended Data Table 3 is supplied as manuscript source data; its smooth-term summary differs from the main tensor-product output and is not reconstructed by assigning it to a different model. The GAM comparison script writes summaries calculated from the fitted objects; precompiled table values are supplied separately.

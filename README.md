@@ -2,7 +2,7 @@
 
 This repository contains the code used to model the global distribution of invasive vascular plants and to examine how predicted invasion suitability varies across coastal reclamation and urban environmental gradients.
 
-The workflow links species occurrences and environmental predictors to species distribution models, multispecies suitability, city-level comparisons, PCA, SEM and scale-dependent GAMs. The environment-only analysis is a planned sensitivity test and is still in progress.
+The workflow links species occurrences and environmental predictors to species distribution models, multispecies suitability, city-level comparisons, PCA, SEM and scale-dependent GAMs. The environment-only sensitivity compares 684 taxa with accepted paired FULL and ENV predictions, from 814 candidate taxa.
 
 ## Contents
 
