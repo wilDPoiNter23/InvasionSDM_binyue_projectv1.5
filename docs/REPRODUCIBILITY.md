@@ -1,3 +1,5 @@
+> Updated 2026-10-12: [CODE_COMPLETENESS_AUDIT.md](CODE_COMPLETENESS_AUDIT.md) and [real-source catalog](../metadata/workflow_stages.csv) supersede the previous integration state described below. Historical limitations are retained as evidence, not current canonical authority.
+
 # Reproducibility scope
 
 This branch supplies a structured implementation/reference workflow with small provenance metadata. It does not promise exact 2025 model bytes or a clean end-to-end replay of all final manuscript figures.

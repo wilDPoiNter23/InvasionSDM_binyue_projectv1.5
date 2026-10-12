@@ -1,3 +1,5 @@
+> Updated 2026-10-12: [CODE_COMPLETENESS_AUDIT.md](CODE_COMPLETENESS_AUDIT.md) and [real-source catalog](../metadata/workflow_stages.csv) supersede the previous integration state described below. Historical limitations are retained as evidence, not current canonical authority.
+
 # Publication repository validation
 
 Validation date: 2026-10-11. Target repository: `wilDPoiNter23/InvasionSDM_binyue_projectv1.5`; working branch: `codex/publication-code-integration`. Integration base: `141bca2d60ee9bdc6f9572131d07a76debb0858b`. This is a publication integration candidate with explicit scientific blockers, not a certified end-to-end reproduction.

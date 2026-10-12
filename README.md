@@ -1,27 +1,37 @@
 # Coastal reclamation and invasive-plant suitability
 
-This repository organizes the available code for global species distribution models and the downstream analysis of 108 coastal cities. It contains R implementations, a Slurm template, input documentation and public-safe provenance metadata. Large datasets, fitted models and manuscript files are external.
+This publication branch contains full recovered historical source for reviewer inspection, configured public copies, original-source snapshots and provenance. **Source coverage is substantially complete; full result reproduction is not yet established.**
 
-**Status:** publication integration candidate. The code structure and syntax can be checked; exact historical 2025 model bytes and all final statistical outputs cannot yet be reproduced. See [validation](docs/PUBLICATION_REPOSITORY_VALIDATION.md) and [remaining blockers](docs/REPRODUCIBILITY.md).
+[Code completeness audit](docs/CODE_COMPLETENESS_AUDIT.md) · [Manuscript coverage matrix](metadata/manuscript_code_coverage.csv) · [Original source hashes](metadata/source_recovery_manifest.csv) · [Scientific expression validation](metadata/original_scientific_comparison.csv)
 
-01 occurrence preparation → 02 predictors → 03 SDM → 04 projection/index → 05 city extraction → 06 PCA/SEM → 07 GAM → 08 figures
+## Inspect the real implementations
 
-The expensive fitting/projection stages belong on HPC. The downstream stages use author-supplied rasters, polygons and city tables and ordinarily run locally. The numbered `code/` folders follow the underlying data flow; [workflow](docs/ANALYSIS_WORKFLOW.md), [Methods mapping](docs/METHODS_MAPPING.md) and [stage catalog](metadata/workflow_stages.csv) identify the implementation for each stage.
+| Analysis | Complete real source | Version boundary |
+|---|---|---|
+| SDM, variable selection and projection | [0401 batch](code/04_sdm/historical/real_sources/0401batch_modeling_config.r), [040101](code/04_sdm/historical/real_sources/040101batch2.0.r), [040102](code/04_sdm/historical/real_sources/040102restbatch.r), [0402](code/04_sdm/historical/real_sources/0402simple_batch.r) | Full historical variants; exact accepted execution version heterogeneous/unresolved |
+| Multispecies index | [0405Allstack](code/05_projection_and_index/real_sources/0405Allstack.r), [research index](code/05_projection_and_index/real_sources/040501REsearch.r) | Exact submitted normalized2.0 writer remains unresolved |
+| City/zone contrasts | [0603](code/06_city_extraction/real_sources/0603reclaim_analysis.r), [buffers](code/06_city_extraction/real_sources/0407buffer_city_compare.r) | Original and boundary-recheck variants kept separately |
+| Manuscript PCA loading table | [060501](code/07_pca_sem/real_sources/060501final_pc_table.r) | Includes reclamation/aspect; mean imputation |
+| Final recheck PCA scores and GAM dispatch | [010303](code/08_gam/real_sources/010303_rerun_gam_after_boundary_update.R) | Excludes reclamation/aspect from those PCA groups; complete cases |
+| Reported scale-dependent GAM | [060503 full source](code/08_gam/real_sources/060503scale_dependentEffect.r) | Actual raw-area tensor includes marine; historical header conflicts with expressions |
+| Matching SEM structure | [Piecewise original](code/07_pca_sem/real_sources/piecewise_sem_historical.R), [preprocessing original](archive/original_sources/local/sem_preprocessing_damaged.R.txt) | Original fitting input interactive; preprocessing source is damaged |
+| SEM coefficients/city effects | [060502](code/09_figures/real_sources/060502indirect_re_caculated.r), [city plots](code/09_figures/real_sources/0604plot_cities_detial.r), [regional tables](code/09_figures/real_sources/060401cities_details_analysis.r) | Actual hard-coded coefficients preserved; fit object unresolved |
+| Evaluation, correlation and response figures | [Full source catalog](metadata/workflow_stages.csv) | Identified statistical/component code present; some manual assemblies unresolved |
 
-## Start here
+## Configuration and inspection
 
-1. Read [DATA_SOURCES.md](DATA_SOURCES.md) and obtain the external inputs. Releases/licences marked TO VERIFY are not resolved by this repository.
-2. Copy [config/config.example.R](config/config.example.R) to `config/config.local.R`; set the external path aliases. Do not put credentials or data in Git.
-3. From the repository root run `Rscript code/run_stage.R --list`. Use `--check <catalogued-script>` for a parse/configuration check. This does not verify external inputs or reproduce results.
-4. Review each script's input/output header and its [runtime dependency ledger](metadata/runtime_dependencies.csv). Unresolved statistical stages are implementation references, not unattended entry points.
-5. For an author-confirmed SDM rerun, follow [HPC instructions](code/04_sdm/hpc/README.md). No jobs are submitted by setup or validation.
+Copy `config/config.example.R` to ignored `config/config.local.R` and configure external paths. Preserve historical relative subtree layouts. `RECOVERED_CODE_SOURCE_ROOT` points to the recovered GAM dispatcher dependencies; `RECOVERED_CODE_ROOT` points to an external historical working/data directory. These are intentionally separate. Historical working-directory calls use configured paths; interactive selections and workspace dependencies remain visible rather than replaced with invented steps.
 
-Configuration contains paths only. Numerical thresholds, PA/CV choices and formulas remain in the source implementations; saved historical objects show heterogeneous realized settings. Reclamation, GDP, population, built-up and night lights occur in species-specific models. These facts must not be replaced with a uniform environmental-only model description.
+Run `Rscript scripts/verify_source_recovery.R .` for parse/expression checks only. `Rscript code/run_stage.R --list` lists actual sources; `--check` checks syntax/configuration. Whole-file execution is gated until historical inputs, workspace state and conflicting versions are resolved. No setup or validation command fits a model, submits jobs or downloads data.
 
-The submitted downstream response is MOST LIKELY `hotspot_mean_suitability_normalized2.0.tif`. The index implementation retained here writes a differently named file and is not proven to be its exact writer. Later 813-taxon products and non-native masks are kept separately in [archive](archive/README.md).
+Each source records original SHA-256 and publication modifications. [Full original snapshots](archive/original_sources/README.md) retain diagnostics/calculations. Seven damaged originals are full `.R.txt` inspection snapshots; they are not passing entrypoints. [Previous integration references](archive/prior_integration_references/README.md) are outside the main workflow. The missing scale-dependent source note is superseded.
 
-[Predictor dictionary](metadata/sdm_predictor_dictionary.csv), [species model summary](metadata/species_model_summary.csv), [source inventory](metadata/code_integration_inventory.csv), and [audit](docs/audits/hpc_accepted_run_audit.md) preserve the evidence boundaries. The 814 metadata rows are a union of historical candidates and later-only species, not an asserted submitted denominator.
+## Limits before a reproducible final release
+
+PCA loading and GAM-score definitions differ. SEM original fit input is unknown. Main Fig. 4 embeds an older image while statistics use recheck. ED Table 3 has no matching identified model. Supplementary Table 3 mixes versions; spatial outputs retain old n=83 results. **5,621.5 km² is a rounded lower endpoint of a P85–P90 sign-change bracket, not a fitted exact breakpoint.** See the coverage matrix for all 28 outputs and 15 stages.
+
+Large rasters, raw occurrences, fitted models and manuscript documents are external. Later 813-taxon, non-native and environment-only sensitivity implementations are supporting/historical archives and are not substituted for submitted analyses. No HPC files were deleted.
 
 ## Citation and reuse
 
-The authoritative repository is [InvasionSDM_binyue_projectv1.5](https://github.com/wilDPoiNter23/InvasionSDM_binyue_projectv1.5). Cite an author-approved release/commit when available; no archived release DOI is supplied. [CITATION.cff](CITATION.cff) records software authorship. The previous MIT declaration has no accompanying licence file: author confirmation of licensing is required before a public release is called ready for reuse.
+Cite an author-approved commit/release when available. See [CITATION.cff](CITATION.cff) and [DATA_SOURCES.md](DATA_SOURCES.md). Licensing/dataset-release metadata still require author confirmation; no archival DOI is asserted.

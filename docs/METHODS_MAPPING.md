@@ -1,19 +1,21 @@
+> Updated 2026-10-12: [CODE_COMPLETENESS_AUDIT.md](CODE_COMPLETENESS_AUDIT.md) and [real-source catalog](../metadata/workflow_stages.csv) supersede the previous integration state described below. Historical limitations are retained as evidence, not current canonical authority.
+
 # Manuscript Methods to code mapping
 
 Mappings refer to the current manuscript subsection titles inspected privately. No manuscript/reviewer material is distributed. “Reference” means available implementation, not proof of submitted execution.
 
 | Methods subsection | Publication script | Main input | Main output / evidence gap |
 |---|---|---|---|
-| Study area | code/01_data_preparation/prepare_species_and_regions.R | Reclamation inventory, GloNAF regions, city boundaries | Regional/city species lists; manual GEE/Landsat vector delineation is external |
-| Invasion Pressure Index: taxa/occurrences | code/02_occurrence_processing/download_occurrences.R; clean_occurrence_coordinates_reference.R | Accepted taxa, GBIF downloads | Cleaned records; taxonomy versions, 839→813 ledger and exact cleaning writer unresolved |
-| Invasion Pressure Index: environmental predictors | code/03_environmental_predictors/build_environmental_stack.R | External aligned raster layers | full_stack.tif; original resampling scripts archived; exact marine/GDP/VIIRS releases TO VERIFY |
-| Invasion Pressure Index: selection, thinning, PA, modeling and evaluation | code/04_sdm/hpc/fit_and_project_batch.R | Occurrences, full_stack.tif, cached formatted/model objects | Selected predictors; models/CV/evaluations/projections; heterogeneous saved objects supersede uniform header claims |
-| Invasion Pressure Index: projection and aggregation | code/05_projection_and_index/build_multispecies_index.R | Projection summary and associated rasters/models | normalized.tif reference; exact normalized2.0.tif writer/contributors/native mask unresolved |
-| Invasion Pressure Index: city summaries | code/06_city_extraction/compare_reclaimed_and_other_land.R | Response raster, 108 polygons, reclaimed/other zones and GIS tables | City and zone summaries; extraction/GIS table provenance requires confirmation |
-| Structural equation modeling | code/07_pca_sem/sem_108_cities.R; pca_and_loading_tables.R | Final city table and workspace | Fits, paths, loadings; manuscript SEM description and code's mixed approaches require reconciliation |
-| Nonlinear relationships: generalized additive mixed models | code/08_gam/gam_reclamation_analysis.R | City/PCA table and saved GAM objects | Multiple candidate fits; author must identify final selected model |
-| Nonlinear relationships: scale dependence, conditional slopes/peaks, spatial diagnostics | code/08_gam/SCALE_DEPENDENT_SOURCE_REQUIRED.md | Final city table / complete 060503 source | BLOCKER: outputs found, full source not found; no formula reconstructed from plots |
-| City-specific net effects / reclamation dependence | code/09_figures/city_effect_tables.R; visualize_city_effects.R | Unstandardized SEM coefficients and city effects | Historical coefficient calculations/figures; final coefficient provenance unresolved |
+| Study area | archive/prior_integration_references/prepare_species_and_regions.R | Reclamation inventory, GloNAF regions, city boundaries | Regional/city species lists; manual GEE/Landsat vector delineation is external |
+| Invasion Pressure Index: taxa/occurrences | archive/prior_integration_references/download_occurrences.R; clean_occurrence_coordinates_reference.R | Accepted taxa, GBIF downloads | Cleaned records; taxonomy versions, 839→813 ledger and exact cleaning writer unresolved |
+| Invasion Pressure Index: environmental predictors | archive/prior_integration_references/build_environmental_stack.R | External aligned raster layers | full_stack.tif; original resampling scripts archived; exact marine/GDP/VIIRS releases TO VERIFY |
+| Invasion Pressure Index: selection, thinning, PA, modeling and evaluation | archive/prior_integration_references/fit_and_project_batch.R | Occurrences, full_stack.tif, cached formatted/model objects | Selected predictors; models/CV/evaluations/projections; heterogeneous saved objects supersede uniform header claims |
+| Invasion Pressure Index: projection and aggregation | archive/prior_integration_references/build_multispecies_index.R | Projection summary and associated rasters/models | normalized.tif reference; exact normalized2.0.tif writer/contributors/native mask unresolved |
+| Invasion Pressure Index: city summaries | archive/prior_integration_references/compare_reclaimed_and_other_land.R | Response raster, 108 polygons, reclaimed/other zones and GIS tables | City and zone summaries; extraction/GIS table provenance requires confirmation |
+| Structural equation modeling | archive/prior_integration_references/sem_108_cities.R; pca_and_loading_tables.R | Final city table and workspace | Fits, paths, loadings; manuscript SEM description and code's mixed approaches require reconciliation |
+| Nonlinear relationships: generalized additive mixed models | archive/prior_integration_references/gam_reclamation_analysis.R | City/PCA table and saved GAM objects | Multiple candidate fits; author must identify final selected model |
+| Nonlinear relationships: scale dependence, conditional slopes/peaks, spatial diagnostics | archive/prior_integration_references/SCALE_DEPENDENT_SOURCE_REQUIRED.md | Final city table / complete 060503 source | BLOCKER: outputs found, full source not found; no formula reconstructed from plots |
+| City-specific net effects / reclamation dependence | archive/prior_integration_references/city_effect_tables.R; visualize_city_effects.R | Unstandardized SEM coefficients and city effects | Historical coefficient calculations/figures; final coefficient provenance unresolved |
 
 ## Conflicts preserved for author resolution
 
