@@ -1,0 +1,23 @@
+{
+  "original_source_records": 364,
+  "local_records": 79,
+  "hpc_live_locations": 285,
+  "hpc_unique_hashes": 268,
+  "configured_full_local_R": 72,
+  "R_record_parse_and_tree_pass": 239,
+  "raw_original_tree_pass": 239,
+  "damaged_original_R_snapshots": 7,
+  "source_hash_failures": 0,
+  "static_credential_private_root_findings": 0,
+  "models_evaluated": 0,
+  "HPC_deletions": 0,
+  "new_source_requires_runtime_acceptance": true,
+  "markdown_broken_links": 0,
+  "validation_date": "2026-10-12",
+  "new_or_moved_R_files_parsed": 311,
+  "new_or_moved_R_parse_failures": 0,
+  "public_hashes_describe": "UTF-8 LF-normalized Git content",
+  "staged_original_public_hash_records_verified": 364,
+  "staged_credential_private_identity_findings": 0,
+  "staged_data_models_rasters": 0
+}

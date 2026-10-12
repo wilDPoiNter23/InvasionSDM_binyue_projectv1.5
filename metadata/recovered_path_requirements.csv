@@ -1,0 +1,11 @@
+alias,historical_basename,kind,requirement,configured
+HISTORICAL_PATH_001,purrr_1.2.1.zip,file,External original asset; original machine root omitted,False
+HISTORICAL_PATH_002,海岸带.shp,file,External original asset; original machine root omitted,False
+HISTORICAL_PATH_003,HPC_ACCOUNT,directory,External original asset; original machine root omitted,False
+HISTORICAL_PATH_004,wgwl0stu_utm.tif,file,External original asset; original machine root omitted,False
+HISTORICAL_PATH_005,simple_SDM,directory,External original asset; original machine root omitted,False
+HISTORICAL_PATH_006,library,directory,External original asset; original machine root omitted,False
+HISTORICAL_PATH_007,scales,directory,External original asset; original machine root omitted,False
+HISTORICAL_PATH_008,full_stack.tif,file,External original asset; original machine root omitted,False
+HISTORICAL_PATH_009,deldir_2.0-4.zip,file,External original asset; original machine root omitted,False
+HISTORICAL_PATH_010,Rlibs,directory,External original asset; original machine root omitted,False

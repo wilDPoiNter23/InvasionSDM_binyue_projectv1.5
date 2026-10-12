@@ -1,0 +1,177 @@
+# Original source: 0302sdmtest.r
+# Original source location: <LOCAL_CODE_ROOT>/0302sdmtest.r
+# Original source SHA-256: 00ad636d914eff7250604e9849f7cd07d8c99bbbe21e0d12e4130077d8a9b859
+# Public-safe original snapshot: archive/original_sources/local/0302sdmtest.r.txt
+# Classification: HISTORICAL
+# Publication modifications:
+# - machine-specific absolute path literals replaced by configured publication_path aliases
+# - local encoding decoded to UTF-8; source bytes hashed above
+# - comments and historical private machine paths sanitized
+# - working-directory calls retained with configured paths; no analyses executed
+# Scientific modification: NONE
+# This is full historical source, not a certified unattended/reproducible run.
+# Snapshot for inspection; path placeholders are not executable locations.
+library(biomod2)
+library(raster)
+library(randomForest)
+library(pbapply)
+
+# Track start time
+start_time <- Sys.time()
+
+# Define paths
+ env_dir <- "<HPC_INPUT_ROOT>/climate/wc2.1_2.5m"
+ species_file <- "<HPC_INPUT_ROOT>/Spartina_alterniflora_gbif.csv"
+output_dir <- "<HPC_INPUT_ROOT>/test/result"
+# if (!dir.exists(output_dir)) dir.create(output_dir)
+
+# Log file for progress
+log_file <- file.path(output_dir, "biomod2_process.log")
+log_msg <- function(msg) {
+  cat(msg, "\n", file = log_file, append = TRUE)
+  cat(msg, "\n")
+}
+log_msg("Script started.")
+
+# Step 1: Load Environmental Data
+tryCatch({
+  log_msg("Loading environmental data...")
+  env_files <- list.files(path = env_dir, pattern = ".tif$", full.names = TRUE)
+  env_stack <- stack(env_files)
+  saveRDS(env_stack, file = file.path(output_dir, "env_stack.rds"))
+   # env_stack <- readRDS('<HPC_INPUT_ROOT>/test/result/env_stack.rds')
+  log_msg("Environmental data loaded and saved.")
+}, error = function(e) {
+  log_msg(paste("Error in loading environmental data:", e$message))
+  stop(e)
+})
+
+# Step 2: Load Species Data
+tryCatch({
+  log_msg("Loading species data...")
+  species_data <- read.csv(species_file)
+  resp_var <- rep(1, nrow(species_data))
+  resp_xy <- species_data[, c("decimalLongitude", "decimalLatitude")]
+  # formatted_data <- readRDS('<HPC_INPUT_ROOT>/test/result/formatted_data.rds')
+  log_msg("Species data loaded.")
+}, error = function(e) {
+  log_msg(paste("Error in loading species data:", e$message))
+  stop(e)
+})
+
+# Step 3: Format Data for BIOMOD2
+ tryCatch({
+  log_msg("Formatting data for BIOMOD2...")
+  formatted_data <- BIOMOD_FormatingData(
+    resp.var = resp_var,
+    expl.var = env_stack,
+    resp.xy = resp_xy,
+    resp.name = "Spartina_alterniflora",
+    PA.nb.rep = 1,
+    PA.nb.absences = 1000,
+    PA.strategy = 'random'
+  )
+#  saveRDS(formatted_data, file = file.path(output_dir, "formatted_data.rds"))
+#  log_msg("Data formatted and saved.")
+#}, error = function(e) {
+#  log_msg(paste("Error in formatting data for BIOMOD2:", e$message))
+#  stop(e)
+#})
+
+# Step 4: Set Model Options
+#tryCatch({
+#  log_msg("Setting model options...")
+#  model_options <- bm_ModelingOptions(
+#    RF = list(ntree = 500)
+#  )
+#  saveRDS(model_options, file = file.path(output_dir, "model_options.rds"))
+#  log_msg("Model options set and saved.")
+#}, error = function(e) {
+#  log_msg(paste("Error in setting model options:", e$message))
+#  stop(e)
+#})
+
+# Step 5: Train Model
+tryCatch({
+  log_msg("Training model...")
+  pboptions(type = "timer")
+  #  biomod_model_out <- BIOMOD_Modeling(
+  #  formatted_data,
+  #  models = c("RF"),
+  #  CV.strategy = 'random',
+  #  CV.nb.rep = 2,
+  #  CV.perc = 0.8,
+  #  OPT.strategy = 'bigboss',
+  #  var.import = 3,
+  #  metric.eval = c('TSS', 'ROC'),
+  #  nb.cpu = 62
+  #)
+  #saveRDS(biomod_model_out, file = file.path(output_dir, "biomod_model_out.rds"))
+  biomod_model_out <- readRDS("<HPC_INPUT_ROOT>/test/result/biomod_model_out.rds")
+  log_msg("Model trained and saved.")
+}, error = function(e) {
+  log_msg(paste("Error in training model:", e$message))
+  stop(e)
+})
+
+# Step 6: Project Model
+# tryCatch({
+#  log_msg("Projecting model...")
+#  biomod_projection <- BIOMOD_Projection(
+#    bm.mod =  biomod_model_out,
+#    new.env = env_stack,
+#    proj.name = 'current',
+#    selected.models = 'all',
+#    binary.meth = 'TSS',
+#    compress = 'xz',
+#    clamping.mask = TRUE,
+#    output.format = '.grd'
+#  )
+#  saveRDS(biomod_projection, file = file.path(output_dir, "biomod_projection.rds"))
+#  log_msg("Model projection completed and saved.")
+#}, error = function(e) {
+#  log_msg(paste("Error in projecting model:", e$message))
+#  stop(e)
+#})
+
+# Step 7: Visualize Results
+# tryCatch({
+#  log_msg("Visualizing results...")
+#  proj_raster <- raster('<HPC_INPUT_ROOT>/script/Spartina.alterniflora/proj_current/proj_current_Spartina.alterniflora.grd')
+#  pdf(file = file.path(output_dir, "Spartina_alterniflora_projection.pdf"), width = 10, height = 8)
+#  plot(proj_raster, main = "Spartina alterniflora Distribution Prediction")
+#  dev.off()
+    # Save the raster object for later use
+#  raster_save_path <- file.path(output_dir, "Spartina_alterniflora_projection.rds")
+#  saveRDS(proj_raster, file = raster_save_path)
+#  log_msg("Results visualized and raster saved.")
+#}, error = function(e) {
+#  log_msg(paste("Error in visualizing results:", e$message))
+#  stop(e)
+#})
+
+# Step 8: Evaluate Model
+tryCatch({
+  log_msg("Evaluating model...")
+  eval <- get_evaluations(biomod_model_out)
+  write.csv(eval, file = file.path(output_dir, "model_evaluation.csv"), row.names = FALSE)
+  log_msg("Model evaluation completed and saved.")
+}, error = function(e) {
+  log_msg(paste("Error in evaluating model:", e$message))
+  stop(e)
+})
+
+# Step 9: Variable Importance
+tryCatch({
+  log_msg("Calculating variable importance...")
+  var_import <- get_variables_importance(biomod_model_out)
+  write.csv(var_import, file = file.path(output_dir, "variable_importance.csv"), row.names = FALSE)
+  log_msg("Variable importance calculated and saved.")
+}, error = function(e) {
+  log_msg(paste("Error in calculating variable importance:", e$message))
+  stop(e)
+})
+
+# Log total time taken
+end_time <- Sys.time()
+log_msg(paste("Script completed in", round(difftime(end_time, start_time, units = "mins"), 2), "minutes."))
