@@ -34,6 +34,8 @@ The production scripts generate two continuous means, a shared count raster, glo
 
 Species modelling uses biomod2, terra, sf, usdm, spThin, dplyr and supporting packages loaded in each script. City analyses also use mgcv, gratia, piecewiseSEM, lme4, ggplot2, patchwork, openxlsx, rstatix and plotting helpers. Install packages separately. BIOMOD2 objects should be read with a compatible package version. The plotbiomes package is required only for the biome-context panel.
 
+See [ENVIRONMENT](ENVIRONMENT.md) for a recorded paired-release R session and the observed 2026-10-13 HPC package descriptions. This evidence does not lock all historical or local analysis environments.
+
 ## Practical limits
 
 Use the archived score/composite tables for the manuscript's downstream results. Loading-table PCA includes reclamation and aspect where the GAM-score PCA does not. The precise SEM preprocessing selection is not fully specified, so fresh composite construction is not guaranteed to reproduce the reported coefficients. Regional plots and figure layouts may require the supplied source-data tables. The historical main response and the paired sensitivity use different species sets and aggregation scales; retain their labels and contributor manifests.
