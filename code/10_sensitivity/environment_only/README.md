@@ -20,7 +20,7 @@ Stored occurrence data, pseudo-absence assignments, cross-validation splits and 
 
 Use paired_species_manifest.csv with species, full_projection and env_projection columns. The frozen working manifest also records model types, scales and completion-record fingerprints. Set input paths to the available continuous projections and their model metadata. GRD inputs require their GRI companions. TSS binary and threshold-filtered rasters are not continuous inputs.
 
-Both groups use the same species and raster grid. Raw BIOMOD continuous values are divided by 1000 to obtain 0ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“1 suitability; no per-species minÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“max normalization is used. No native-range mask is introduced. Within each cell, a species contributes only when both its FULL and ENV values are finite. Both means divide by this shared count. A zero count gives missing means and a count of zero.
+Both groups use the same species and raster grid. Raw BIOMOD continuous values are divided by 1000 to obtain 0-1 suitability; no per-species min-max normalization is used. No native-range mask is introduced. Within each cell, a species contributes only when both its FULL and ENV values are finite. Both means divide by this shared count. A zero count gives missing means and a count of zero.
 
 For N species, the products are:
 

@@ -35,6 +35,8 @@ The response is predicted invasion suitability, rather than observed establishme
 
 Manual arrangement of figure panels is separate from the component plots. This repository provides the statistical calculations and component-generation scripts.
 
+See [REPRODUCIBILITY](docs/REPRODUCIBILITY.md) for source preservation, remaining historical lineage and SEM preprocessing requirements, and a static validation command that runs no analyses.
+
 ## Citation
 
 Use CITATION.cff to cite the code and cite each external dataset separately. The data-package DOI and release metadata will be added when the deposit is available.
