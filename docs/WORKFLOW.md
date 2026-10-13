@@ -38,4 +38,9 @@ See [ENVIRONMENT](ENVIRONMENT.md) for a recorded paired-release R session and th
 
 ## Practical limits
 
+For the downstream revision programme, see [REVIEWER_SENSITIVITY](REVIEWER_SENSITIVITY.md).
+Its modules reuse accepted projections and the boundary-updated city table,
+compare explicit GAM formulations and retain one external article evidence root.
+They do not refit species models or replace the historical response.
+
 Use the archived score/composite tables for the manuscript's downstream results. Loading-table PCA includes reclamation and aspect where the GAM-score PCA does not. The precise SEM preprocessing selection is not fully specified, so fresh composite construction is not guaranteed to reproduce the reported coefficients. Regional plots and figure layouts may require the supplied source-data tables. The historical main response and the paired sensitivity use different species sets and aggregation scales; retain their labels and contributor manifests.

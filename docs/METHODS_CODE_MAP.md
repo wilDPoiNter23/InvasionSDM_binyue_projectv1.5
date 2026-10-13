@@ -27,6 +27,14 @@ The table identifies statistical calculations and component plots. Final multi-p
 
 ## Scientific details
 
+Reviewer-informed downstream sensitivities are documented in
+[REVIEWER_SENSITIVITY](REVIEWER_SENSITIVITY.md). Their stage-specific scripts under
+code/10_sensitivity/ provide new paired-product comparisons, explicit GAM
+parameterisations, geographic influence and residual diagnostics. These outputs
+are separate from the submitted figure/table versions listed above. Revised
+residual diagnostics use the common final GAM sample; archived diagnostics may
+use a different sample and neighbourhood definition.
+
 The original land-zone figures and revised boundary calculations are separate script inputs. Use the version accompanying the figure/source-data file. The supplied GAM coefficient summaries should match the selected figure version: the older Extended Data smooth summary and alternative-model table are not interchangeable with the revised tensor-product output.
 
 Loading-table PCA uses mean imputation and includes reclamation/aspect in the relevant groups. GAM-score PCA uses complete cases and excludes those variables. The SEM fits the archived composite table, while the city-effect calculation uses the reported coefficients. These definitions are explicit in the scripts.
