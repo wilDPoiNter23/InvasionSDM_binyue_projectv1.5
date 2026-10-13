@@ -36,6 +36,8 @@ pattern, generating script and input IDs, so saved fits are not attributed to a
 later plotting or verification command. It can execute stages in separate clean R sessions or record
 already completed stages. Completed numerical outputs must be inspected and
 preserved before any further execution.
+Retained intermediate exports and superseded geographic summaries are explicitly
+marked in the output index; they must not be used in place of current verified tables.
 
 ## Scientific definitions
 

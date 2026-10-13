@@ -85,6 +85,8 @@ rows <- lapply(files,function(p) {
   ids <- if(length(owners)) paste(unlist(owners[[1L]]$input_ids),collapse=";") else paste(input_table$input_id,collapse=";")
   original_writer <- owner
   writer_method <- "repository_script"
+  superseded <- !is.null(cfg$superseded_patterns) && any(vapply(cfg$superseded_patterns,
+                      function(pattern) grepl(pattern,relative,perl=TRUE),logical(1)))
   if(!is.null(cfg$writer_overrides[[relative]])) {
     override <- cfg$writer_overrides[[relative]]
     owner <- override$generating_script
@@ -93,6 +95,7 @@ rows <- lapply(files,function(p) {
   }
   data.frame(output_path=normalizePath(p,winslash="/",mustWork=TRUE),relative_path=relative,
              generating_script=owner,original_writer=original_writer,writer_method=writer_method,
+             artifact_status=if(superseded) "SUPERSEDED_RETAINED" else "CURRENT_OR_DIAGNOSTIC",
              inventory_script="code/10_sensitivity/run_revision_sensitivity_analyses.R",
              input_ids=ids,commit=commit,
              size_bytes=file.info(p)$size,sha256=digest(file=p,algo="sha256"),stringsAsFactors=FALSE)
