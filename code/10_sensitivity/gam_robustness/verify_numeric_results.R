@@ -1,0 +1,35 @@
+# Independent numerical verification without graphics devices.
+a<-commandArgs(TRUE);stopifnot(length(a)==2,a[1]=="--output-root")
+root<-a[2];base<-file.path(root,"02_gam_robustness")
+suppressPackageStartupMessages(library(mgcv))
+m<-readRDS(file.path(base,"model_objects","HISTORICAL_MAIN_G0.rds"))
+s<-summary(m);st<-s$s.table
+actual<-c(nobs(m),s$r.sq,s$dev.expl,AIC(m),st[1,1],st[1,3],st[1,4])
+expected<-c(84,.7878737,.83368766,-220.189470,7.370560,3.491571,.001747759)
+tol<-c(0,1e-5,1e-5,.001,.001,.001,1e-5)
+v<-data.frame(quantity=c("n","adj_r2","deviance_explained","AIC","tensor_edf","tensor_F","tensor_p"),actual=actual,expected=expected,tolerance=tol,pass=abs(actual-expected)<=tol)
+t<-read.csv(file.path(base,"tables","model_comparison.csv"));r<-read.csv(file.path(base,"tables","residuals_and_influence.csv"))
+groups<-split(r$city,paste(r$response,r$model));stopifnot(length(groups)==12,all(v$pass),all(t$n==84),all(vapply(groups,function(x)identical(sort(x),sort(groups[[1]])),logical(1))))
+mi<-read.csv(file.path(root,"05_spatial_diagnostics","tables","moran_permutation_results.csv"));stopifnot(all(mi$n==84),all(is.finite(mi$Moran_I)),all(mi$permutation_p>0 & mi$permutation_p<=1))
+b<-read.csv(file.path(base,"tables","bootstrap_sign_change_intervals.csv"));stopifnot(nrow(b)==120,all(b$success))
+scan<-read.csv(file.path(base,"tables","sign_change_intervals.csv"));g0<-subset(scan,response=="HISTORICAL_MAIN"&model=="G0"&support=="whole108_range")
+stopifnot(abs(g0$lower_km2-5621.49087825)<1e-7,abs(g0$upper_km2-8531.9724488)<1e-7)
+write.csv(v,file.path(base,"qc","fresh_session_numeric_verification.csv"),row.names=FALSE)
+receipt<-read.csv(file.path(base,"qc","input_receipt.csv"))
+archived<-read.csv(receipt$input)
+fresh_path<-file.path(root,"01_environment_only","tables","three_response_city_extraction.csv")
+fresh<-read.csv(fresh_path)
+ix<-match(tolower(archived$city),tolower(fresh$city));stopifnot(!anyNA(ix))
+dif<-data.frame(city=archived$city,in_n84=archived$city%in%groups[[1]],archived_gam_city_risk=archived$risk,fresh_polygon_historical_response=fresh$HISTORICAL_MAIN[ix])
+dif$difference<-dif$fresh_polygon_historical_response-dif$archived_gam_city_risk
+write.csv(dif,file.path(base,"qc","archived_vs_fresh_historical_city_response.csv"),row.names=FALSE)
+z<-dif[dif$in_n84,]
+write.csv(data.frame(sample=c("all108","GAM84"),n=c(108,nrow(z)),mean_abs_difference=c(mean(abs(dif$difference)),mean(abs(z$difference))),max_abs_difference=c(max(abs(dif$difference)),max(abs(z$difference))),status="SOURCE_CONCORDANCE_WARNING: archived GAM response differs from fresh final-polygon extraction; do not silently substitute or interpret historical-to-paired difference as predictor removal alone"),file.path(base,"qc","historical_response_source_concordance.csv"),row.names=FALSE)
+write.csv(data.frame(model_response_id=c("HISTORICAL_MAIN","PAIRED_FULL_684","PAIRED_ENV_684"),scientific_label=c("ARCHIVED_GAM_CITY_RISK","PAIRED_FULL_684","PAIRED_ENV_684"),source=c(receipt$input,fresh_path,fresh_path),source_column=c("risk","PAIRED_FULL_684","PAIRED_ENV_684"),comparability=c("Archived G0 numerical reproduction valid; direct comparison with fresh extracted response blocked pending source concordance","Matched FULL-vs-ENV comparison valid on common84cities","Matched FULL-vs-ENV comparison valid on common84cities")),file.path(base,"qc","response_source_definitions.csv"),row.names=FALSE)
+geo_file<-file.path(root,"03_sampling_selection","tables","leave_continent_out_models_geography_verified.csv")
+if(file.exists(geo_file)) {
+  geo<-read.csv(geo_file);x<-read.csv(file.path(root,"03_sampling_selection","qc","geographic_crosswalk_verified.csv"))
+  qc<-data.frame(check=c("all108city_identity","noCaribbeanEurope","Europe_n79","NorthAmerica_n80","SouthAmerica_n79","canonicalsha_verified"),pass=c(nrow(x)==108&&!anyDuplicated(x$city),all(x$verified_continent[x$country%in%c("Haiti","Puerto Rico","Dominican Republic")]=="North America"),all(geo$n[geo$subset=="exclude_Europe"]==79),all(geo$n[geo$subset=="exclude_North America"]==80),all(geo$n[geo$subset=="exclude_South America"]==79),all(x$source_sha256==digest::digest(file=receipt$input,algo="sha256"))))
+  stopifnot(all(qc$pass));write.csv(qc,file.path(root,"03_sampling_selection","qc","geographic_independent_verification.csv"),row.names=FALSE)
+}
+cat("FRESH_SESSION_NUMERIC_PASS: 12 identical84-city samples;7G0 numerical targets;120successfulbootstrapfits;finiteMoran results\n")
