@@ -4,13 +4,13 @@ The repository supplies analysis implementations and statistical figure componen
 
 ## Static validation
 
-Run from any directory with Python 3, Rscript and Bash available:
+Run from the repository root with Python 3, Rscript and Bash available:
 
 ```sh
 python tools/validate_publication.py
 ```
 
-If those executables are outside PATH, supply `--rscript /path/to/Rscript` and `--bash /path/to/bash`. This command parses R and Python, checks Bash syntax, checks local Markdown links, verifies literal `publication_path` aliases against the example configuration and checks the eleven preserved source checksums. It does not install packages, source R scripts, load scientific data, submit jobs or run models. Missing checking executables produce a failed check rather than a false pass.
+If those executables are outside PATH, supply `--rscript /path/to/Rscript` and `--bash /path/to/bash`. Using an absolute path to `tools/validate_publication.py` allows the check to run from another directory. This command parses R and Python, checks Bash syntax, checks local Markdown links, verifies literal `publication_path` aliases against the example configuration and checks the eleven preserved source checksums. It does not install packages, source R scripts, load scientific data, submit jobs or run models. Missing checking executables produce a failed check rather than a false pass.
 
 ## Source coverage
 
@@ -18,10 +18,13 @@ The paired sensitivity has eleven production-source files in the preserved sourc
 
 The original archive also preserves scientific and audit sources outside this curated public workflow. It is not a substitute for the public analysis entrypoints, and the total archive file count is not the number of manuscript analyses. Historical scripts and later sensitivities must retain their different response definitions and species sets.
 
+The previous public layout is pinned at Git commit [`141bca2d60ee9bdc6f9572131d07a76debb0858b`](https://github.com/wilDPoiNter23/InvasionSDM_binyue_projectv1.5/tree/141bca2d60ee9bdc6f9572131d07a76debb0858b). This curated version substantially reorganizes and supplements that layout; it is not a byte-identical historical workflow. Earlier integration commits corrected occurrence ingestion defects, including duplicate database insertion and writing the wrong cleaned-table object. Those corrections can change regenerated occurrence inputs. To reconstruct historical outputs, use frozen original inputs and the corresponding writer scripts from that Git baseline or the preserved source archive; do not assume that rerunning the cleaned pipeline reproduces historical manuscript numbers. The 2026-10-13 static-validation, checksum and documentation additions do not alter scientific analysis scripts, which is a narrower claim than equivalence of the whole integration branch to the historical workflow.
+
 [METHODS_CODE_MAP](METHODS_CODE_MAP.md) lists the main analyses and figure components. Coverage has these practical limits:
 
 | Component | Available implementation or supplied input | Remaining requirement |
 |---|---|---|
+| Occurrence processing | Download and cleaning implementations | The cleaner corrects legacy duplicate database insertion, connection lifetime and cleaned-table writing defects; use archived cleaned inputs for historical replication |
 | Species SDM and projections | Three-fold batch and separate five-fold implementation | Choose the saved design/options and package versions for the corresponding fitted objects |
 | Historical manuscript aggregate | Aggregation implementation and staged normalized raster | Bind the exact historical writer, successful contributor list and projection versions to the deposited raster |
 | PCA, SEM and city effects | Loading/composite equations, SEM fit and coefficient-based effects | Use archived composite/coefficient tables; the precise upstream SEM transformations and standardization are not fully specified |
