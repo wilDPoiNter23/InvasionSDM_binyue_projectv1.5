@@ -2,12 +2,15 @@
 # Compare threshold-defined paired responses using the same city predictors.
 suppressPackageStartupMessages({library(jsonlite);library(digest);library(mgcv)})
 cfg<-fromJSON(commandArgs(TRUE)[1],simplifyVector=FALSE);out<-cfg$output_root
+K<-if(is.null(cfg$expected_species_count))684L else as.integer(cfg$expected_species_count)
+stopifnot(length(K)==1L,is.finite(K),K>0L,K<=684L)
+expected_status<-paste0("COMPLETE_FIXED_",K)
 if(dir.exists(out))stop("Existing association retained")
 dir.create(out,recursive=TRUE)
 d<-read.csv(cfg$city_responses,stringsAsFactors=FALSE)
 p<-read.csv(cfg$city_predictors,stringsAsFactors=FALSE)
 key<-function(x)chartr("ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz",trimws(x))
-stopifnot(!anyDuplicated(key(p$city)),all(d$frozen_species_n==684),cfg$minimum_cities>=50)
+stopifnot(!anyDuplicated(key(p$city)),all(d$frozen_species_n==K),cfg$minimum_cities>=50)
 d$key<-key(d$city_id);p$key<-key(p$city)
 if(any(!d$key%in%p$key))stop("Unmatched city identity")
 d<-merge(d,p,by="key",all.x=TRUE)
@@ -15,7 +18,7 @@ d$log_recl<-log1p(d$reclamation_area);d$log_area<-log1p(d$area_km2)
 fields<-c("log_recl","log_area","area_km2","anthro_pc1","climate_pc1","soil_pc1","marine_pc1")
 summaries<-list();gates<-list();contrasts<-list();modelrows<-list()
 for(region in unique(d$region)){
- z<-d[d$region==region&d$status=="COMPLETE_FIXED_684"&complete.cases(d[,fields]),]
+ z<-d[d$region==region&d$status==expected_status&complete.cases(d[,fields]),]
  counts<-table(z$key)
  ids<-names(counts[counts==4L]);z<-z[z$key%in%ids,]
  if(anyDuplicated(paste(z$key,z$group,z$threshold)))stop("Duplicate paired response")
@@ -24,7 +27,7 @@ for(region in unique(d$region)){
   q<-z[z$group==group&z$threshold==threshold,]
   stopifnot(nrow(q)==n)
   for(response in c("mean_species_suitable_fraction","mean_species_suitable_area")){
-   q$y<-if(response=="mean_species_suitable_fraction")q$mean_species_suitable_fraction else log1p(q$suitable_species_area_km2/684)
+   q$y<-if(response=="mean_species_suitable_fraction")q$mean_species_suitable_fraction else log1p(q$suitable_species_area_km2/K)
    state<-"INSUFFICIENT_COMMON_CITY_SUPPORT"
    if(n>=cfg$minimum_cities&&all(is.finite(q$y))&&sd(q$y)>0){
     formula<-if(response=="mean_species_suitable_fraction")y~te(log_recl,area_km2,k=c(5,5))+s(anthro_pc1,k=5)+s(climate_pc1,k=5)+s(soil_pc1,k=5)+s(marine_pc1,k=5)else y~s(log_recl,k=5)+s(log_area,k=5)+s(anthro_pc1,k=5)+s(climate_pc1,k=5)+s(soil_pc1,k=5)+s(marine_pc1,k=5)
@@ -51,7 +54,7 @@ write.csv(do.call(rbind,gates),file.path(out,"model_support.csv"),row.names=FALS
 if(length(summaries))write.csv(do.call(rbind,summaries),file.path(out,"model_summary.csv"),row.names=FALSE)
 if(length(contrasts))write.csv(do.call(rbind,contrasts),file.path(out,"reclamation_contrasts.csv"),row.names=FALSE)
 write.csv(do.call(rbind,modelrows),file.path(out,"matched_city_data.csv"),row.names=FALSE)
-write_json(list(status="THRESHOLD_SENSITIVITY",species=684,fixed_city_support=TRUE,
+write_json(list(status="THRESHOLD_SENSITIVITY",species=K,source_species_pool=684,fixed_city_support=TRUE,
  area_response="log1p mean species suitable area; sum across species is not unique habitat area",
  full_response_still_uses_human_predictors=TRUE,causal_or_sem_validation=FALSE,
  response_sha256=digest(file=cfg$city_responses,algo="sha256"),predictor_sha256=digest(file=cfg$city_predictors,algo="sha256")),file.path(out,"association.json"),auto_unbox=TRUE,pretty=TRUE)

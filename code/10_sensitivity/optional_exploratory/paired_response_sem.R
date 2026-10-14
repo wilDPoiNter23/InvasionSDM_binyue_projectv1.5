@@ -47,6 +47,9 @@ component_fit <- function(d,intensity=FALSE){
 main <- function(){
  suppressPackageStartupMessages({library(jsonlite);library(digest)})
  cfg <- fromJSON(commandArgs(TRUE)[1],simplifyVector=FALSE);out<-cfg$output_root
+ species_count<-if(is.null(cfg$expected_species_count))684L else as.integer(cfg$expected_species_count)
+ if(length(species_count)!=1L||is.na(species_count)||species_count<1L||species_count>684L)stop("Invalid declared species count")
+ complete_status<-if(is.null(cfg$binary_complete_status))paste0("COMPLETE_FIXED_",species_count)else cfg$binary_complete_status
  if(dir.exists(out))stop("Existing component sensitivity retained")
  dir.create(out,recursive=TRUE)
  key<-function(x)chartr("ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz",trimws(as.character(x)))
@@ -67,19 +70,19 @@ main <- function(){
   z<-merge(base,r[,c("key","richness","target_record_n")],by="key",all.x=TRUE)
   z$y<-log1p(z$richness);z$intensity<-log1p(z$target_record_n)
   z<-z[complete.cases(z[,c("recl","city_area","soc","clim","soil","marine","y","intensity")])&z$target_record_n>0,]
-  cases$OBSERVED_M0<-list(data=z,intensity=FALSE,type="observed")
-  cases$OBSERVED_M1<-list(data=z,intensity=TRUE,type="observed")
+  cases$OBSERVED_M0<-list(data=z,intensity=FALSE,type="observed",species_n=NA_integer_)
+  cases$OBSERVED_M1<-list(data=z,intensity=TRUE,type="observed",species_n=NA_integer_)
   receipts$observed_sha256<-digest(file=cfg$observed_richness,algo="sha256")
  }
  if(!is.null(cfg$binary_city_responses)){
   r<-read.csv(cfg$binary_city_responses,stringsAsFactors=FALSE);r<-r[r$region=="CITY",];r$key<-key(r$city_id)
-  if(anyDuplicated(paste(r$key,r$group,r$threshold))||any(!r$key %in% base$key)||any(r$frozen_species_n!=684L))stop("Binary response contract failed")
+  if(anyDuplicated(paste(r$key,r$group,r$threshold))||any(!r$key %in% base$key)||anyNA(r$frozen_species_n)||any(r$frozen_species_n!=species_count))stop("Binary response contract failed: declared species denominator or city identity differs")
   available<-list()
   for(g in c("FULL","ENV"))for(t in c("T10","MAX_TSS")){
-   a<-r[r$group==g&r$threshold==t&r$status=="COMPLETE_FIXED_684",]
+   a<-r[r$group==g&r$threshold==t&r$status==complete_status,]
    if(!nrow(a))stop("Missing binary group-threshold case")
    z<-merge(base,a,by="key",all.x=TRUE)
-   z$fraction<-z$mean_species_suitable_fraction;z$mean_area<-log1p(z$suitable_species_area_km2/684)
+   z$fraction<-z$mean_species_suitable_fraction;z$mean_area<-log1p(z$suitable_species_area_km2/species_count)
    if(any(z$fraction<0|z$fraction>1,na.rm=TRUE)||any(z$suitable_species_area_km2<0,na.rm=TRUE))stop("Binary response value gate failed")
    available[[paste(g,t,sep="_")]]<-z
   }
@@ -88,9 +91,11 @@ main <- function(){
   write.csv(data.frame(key=sort(common)),file.path(out,"frozen_binary_city_keys.csv"),row.names=FALSE)
   for(nm in names(available))for(endpoint in c("fraction","mean_area")){
    z<-available[[nm]];z<-z[match(sort(common),z$key),];z$y<-z[[endpoint]]
-   cases[[paste(nm,endpoint,sep="_")]]<-list(data=z,intensity=FALSE,type="binary")
+   cases[[paste(nm,endpoint,sep="_")]]<-list(data=z,intensity=FALSE,type="binary",species_n=species_count)
   }
   receipts$binary_sha256<-digest(file=cfg$binary_city_responses,algo="sha256")
+  receipts$binary_species_count<-species_count;receipts$binary_complete_status<-complete_status
+  if(!is.null(cfg$core_species_roster))receipts$core_species_roster_sha256<-digest(file=cfg$core_species_roster,algo="sha256")
  }
  if(!length(cases))stop("No declared response sources")
  set.seed(cfg$seed);edges<-list();effects<-list();draws<-list();support<-list();datasets<-list();scales<-list()
@@ -101,7 +106,7 @@ main <- function(){
    scale_table<-data.frame(variable=vars,mean=vapply(z[,vars],mean,numeric(1)),sd=vapply(z[,vars],sd,numeric(1)))
    if(any(!is.finite(scale_table$sd)|scale_table$sd<=0))stop("Constant component variable")
    z[,vars]<-scale(z[,vars]);a<-component_fit(z,ca$intensity)
-   a$edges$case<-nm;edges[[nm]]<-a$edges
+   a$edges$case<-nm;a$edges$frozen_species_n<-ca$species_n;edges[[nm]]<-a$edges
    B<-as.integer(cfg$bootstrap_replicates);if(B<99L)stop("Bootstrap support must include at least 99 replicates")
    boot<-matrix(NA_real_,B,length(a$effects),dimnames=list(NULL,names(a$effects)))
    for(b in seq_len(B)){
@@ -110,12 +115,12 @@ main <- function(){
    }
    success<-complete.cases(boot);if(mean(success)<.95)stop("Bootstrap convergence support below 95 percent")
    ci<-apply(boot[success,,drop=FALSE],2,quantile,c(.025,.975))
-   effects[[nm]]<-data.frame(case=nm,effect=names(a$effects),estimate=as.numeric(a$effects),lower=ci[1,],upper=ci[2,],successful_bootstrap=sum(success),requested_bootstrap=B,row.names=NULL)
+   effects[[nm]]<-data.frame(case=nm,frozen_species_n=ca$species_n,effect=names(a$effects),estimate=as.numeric(a$effects),lower=ci[1,],upper=ci[2,],successful_bootstrap=sum(success),requested_bootstrap=B,row.names=NULL)
    draws[[nm]]<-data.frame(case=nm,replicate=seq_len(B),boot,check.names=FALSE)
    datasets[[nm]]<-data.frame(case=nm,z,check.names=FALSE);scale_table$case<-nm;scales[[nm]]<-scale_table
    state<-"ADAPTED_EXPLORATORY_COMPONENT_SYSTEM"
   }
-  support[[nm]]<-data.frame(case=nm,response_type=ca$type,n=nrow(z),status=state,intensity_adjustment=ca$intensity)
+  support[[nm]]<-data.frame(case=nm,response_type=ca$type,frozen_species_n=ca$species_n,n=nrow(z),status=state,intensity_adjustment=ca$intensity)
  }
  write.csv(do.call(rbind,support),file.path(out,"support.csv"),row.names=FALSE)
  for(item in c("edges","effects","draws","scales"))if(length(get(item)))write.csv(do.call(rbind,get(item)),file.path(out,paste0(item,".csv")),row.names=FALSE)
@@ -126,11 +131,13 @@ main <- function(){
  write_json(list(status="ADAPTED_UNSUPERVISED_PC_COMPONENT_SENSITIVITY",inputs=receipts,
   bootstrap="City resampling; original per-case standardization fixed for all replicates",formulas=lapply(component_formulas(),function(f)paste(deparse(f),collapse=" ")),
   path_pruning=FALSE,city_area_in_every_equation=TRUE,causal_interpretation=FALSE,original_sem_reproduction=FALSE,
+  binary_species_scope=if(is.null(cfg$binary_city_responses))"NOT_REQUESTED"else if(species_count==684L)"STRICT_PAIRED_684"else "ADAPTED_FIXED_ELIGIBILITY_CORE",
   limitations=c("Fixed city PCs use unsupervised predictor variation; old risk-supervised composite weights are excluded",
    "Full SDM response retains predictor-to-response construction reuse; environmental-only response reduces human-predictor reuse",
    "Observed richness remains conditional on detection and recording; target-record intensity is endogenous",
    "Bootstrap intervals are exploratory and do not correct spatial dependence, confounding or model selection",
-   "PCA input and loadings provenance must be verified separately; no causal mediation identification is claimed")),file.path(out,"receipt.json"),auto_unbox=TRUE,pretty=TRUE)
+   "PCA input and loadings provenance must be verified separately; no causal mediation identification is claimed",
+   "A smaller fixed eligibility core changes the taxonomic estimand and does not reproduce the strict 684-species response")),file.path(out,"receipt.json"),auto_unbox=TRUE,pretty=TRUE)
  writeLines(capture.output(sessionInfo()),file.path(out,"sessionInfo.txt"))
 }
 if(sys.nframe()==0L)main()

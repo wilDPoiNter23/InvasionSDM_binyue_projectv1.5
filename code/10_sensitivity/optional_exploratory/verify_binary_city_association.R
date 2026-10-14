@@ -2,10 +2,13 @@
 # Check saved model support and threshold contrasts against direct predictions.
 suppressPackageStartupMessages({library(jsonlite);library(mgcv)})
 cfg<-fromJSON(commandArgs(TRUE)[1],simplifyVector=FALSE);out<-cfg$output_root
+K<-if(is.null(cfg$expected_species_count))684L else as.integer(cfg$expected_species_count)
+stopifnot(length(K)==1L,is.finite(K),K>0L,K<=684L)
+expected_status<-paste0("COMPLETE_FIXED_",K)
 path<-file.path(out,"association_check.json");if(file.exists(path))stop("Existing check retained")
 rows<-read.csv(file.path(out,"matched_city_data.csv"),stringsAsFactors=FALSE)
 g<-read.csv(file.path(out,"model_support.csv"),stringsAsFactors=FALSE)
-stopifnot(all(g$n_common_cities>=0),all(rows$frozen_species_n==684),all(rows$status=="COMPLETE_FIXED_684"))
+stopifnot(all(g$n_common_cities>=0),all(rows$frozen_species_n==K),all(rows$status==expected_status))
 checks<-0L;delta<-numeric()
 if(file.exists(file.path(out,"reclamation_contrasts.csv"))){
  d<-read.csv(file.path(out,"reclamation_contrasts.csv"),stringsAsFactors=FALSE)
@@ -17,7 +20,7 @@ if(file.exists(file.path(out,"reclamation_contrasts.csv"))){
   low<-high<-z;low$log_recl<-r$reclamation_log_q25;high$log_recl<-r$reclamation_log_q75
   e<-mean(predict(m,high,type="response")-predict(m,low,type="response"))
   delta<-c(delta,abs(e-r$mean_q75_minus_q25));stopifnot(tail(delta,1)<1e-9,r$lower<=r$upper)
-  target<-if(r$response=="mean_species_suitable_fraction")z$mean_species_suitable_fraction else log1p(z$suitable_species_area_km2/684)
+  target<-if(r$response=="mean_species_suitable_fraction")z$mean_species_suitable_fraction else log1p(z$suitable_species_area_km2/K)
   stopifnot(max(abs(m$y-target))<1e-12)
   checks<-checks+1L
  }
