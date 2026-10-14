@@ -68,3 +68,10 @@ Run `verify_mining_screen.py CONFIG.json` after the R module. It independently
 reconstructs period totals, geographic cell indexing, grouped values and adjusted
 least-squares point estimates. It does not validate ecological causation or
 reconstruct the cluster intervals. Preserve failed checks and earlier runs.
+
+To correct rounded metadata without recalculating valid tables, set
+`metadata_only` to true in a separate private configuration. The R module writes
+`grid_metadata_precise.json` with full numeric precision. A subsequent verifier
+configuration may declare `grid_metadata` and a new `verification_filename`.
+The verifier binds precise metadata to the original raster hashes and checks
+unchanged extent and dimensions. Earlier metadata and checks remain available.

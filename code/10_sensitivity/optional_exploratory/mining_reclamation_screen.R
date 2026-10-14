@@ -6,6 +6,20 @@ if(length(args)!=1L) stop("Supply a private JSON configuration")
 cfg <- fromJSON(args[1],simplifyVector=FALSE)
 out <- cfg$output_root
 dir.create(out,recursive=TRUE,showWarnings=FALSE)
+if(isTRUE(cfg$metadata_only)) {
+  r <- rast(cfg$responses$FULL); e <- rast(cfg$responses$ENV)
+  stopifnot(compareGeom(r,e,stopOnError=TRUE),
+    file.exists(file.path(out,"screen_complete.json")))
+  target <- file.path(out,"grid_metadata_precise.json")
+  if(file.exists(target)) stop("Existing precise metadata retained")
+  grid <- list(xmin=xmin(r),xmax=xmax(r),ymin=ymin(r),ymax=ymax(r),
+    xres=res(r)[1],yres=res(r)[2],ncol=ncol(r),nrow=nrow(r),crs=crs(r))
+  write_json(list(grid=grid,inputs=lapply(unlist(cfg$responses),
+    function(f)list(path=f,sha256=digest(file=f,algo="sha256"))),
+    scope="Full-precision raster metadata only; calculated tables unchanged"),
+    target,pretty=TRUE,auto_unbox=TRUE,digits=NA)
+  quit(status=0)
+}
 if(file.exists(file.path(out,"screen_complete.json"))) stop("Completed output retained")
 terraOptions(tempdir=out,memfrac=.4)
 d <- read.csv(cfg$mining_csv,check.names=FALSE)
@@ -114,5 +128,5 @@ write_json(list(status="SCREEN_CALCULATED_PENDING_INDEPENDENT_CHECK",grid=grid,
   shared_cell_duplicates_collapsed=TRUE,observed_invasion_response=FALSE,
   temporal_scope="Cumulative reclamation activity through 2022 versus static suitability",
   caveat="Centroid-based landscape screen; reported period totals may include repeated transitions"),
-  file.path(out,"screen_complete.json"),pretty=TRUE,auto_unbox=TRUE)
+  file.path(out,"screen_complete.json"),pretty=TRUE,auto_unbox=TRUE,digits=NA)
 cat("Mining native-cell screen calculated; independent checks still required.\n")

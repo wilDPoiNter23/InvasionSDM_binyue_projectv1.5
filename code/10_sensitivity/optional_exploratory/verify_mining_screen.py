@@ -45,6 +45,18 @@ def main():
     def check(name, ok):
         checks.append({"name": name, "passed": bool(ok)})
 
+    if cfg.get("grid_metadata"):
+        precise = json.loads(Path(cfg["grid_metadata"]).read_text())
+        previous = {v["path"]: v["sha256"] for v in receipt["inputs"]}
+        check("precise metadata bound to the original raster inputs",
+              all(previous.get(v["path"]) == v["sha256"] for v in precise["inputs"]))
+        check("precise metadata preserves extent and dimensions",
+              all(grid[k] == precise["grid"][k] for k in ["xmin", "xmax", "ymin", "ymax", "nrow", "ncol"]))
+        grid = precise["grid"]
+    check("grid resolution agrees with extent and dimensions",
+          abs(grid["xres"] * grid["ncol"] - (grid["xmax"] - grid["xmin"])) < 1e-9
+          and abs(grid["yres"] * grid["nrow"] - (grid["ymax"] - grid["ymin"])) < 1e-9)
+
     check("unique complete polygon identities", len(points) == len(raw) == len({r["polygon_id"] for r in points}))
     correct = True
     for row in points:
@@ -108,7 +120,10 @@ def main():
     report = {"status": "PASS_NATIVE_CELL_SCREEN" if passed else "FAIL", "checks": checks,
               "scope": "Centroid assignment and exploratory static-suitability associations; not polygon extraction or observed invasion",
               "cluster_interval_reconstruction": False}
-    (out / "independent_verification.json").write_text(json.dumps(report, indent=2) + "\n")
+    target = out / cfg.get("verification_filename", "independent_verification.json")
+    if target.exists():
+        raise FileExistsError("Existing verification retained: " + str(target))
+    target.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
     return 0 if passed else 1
 
