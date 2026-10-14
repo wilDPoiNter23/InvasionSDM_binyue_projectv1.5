@@ -14,12 +14,14 @@ correction_file <- file.path(out,"fraction_precision_corrections.csv")
 corrections <- if(file.exists(correction_file))read.csv(correction_file) else NULL
 base <- sub("[.]shp$","",cfg$mining_shapefile,ignore.case=TRUE)
 shape_files <- paste0(base,c(".shp",".shx",".dbf",".prj",".cpg"))
-inputs <- c(args[1],cfg$mining_csv,shape_files[file.exists(shape_files)],unlist(cfg$responses))
+extraction_configuration <- if(is.null(cfg$extraction_configuration))args[1] else cfg$extraction_configuration
+inputs <- c(extraction_configuration,cfg$mining_csv,shape_files[file.exists(shape_files)],unlist(cfg$responses))
 receipt <- list(inputs=lapply(unname(inputs),function(f)list(path=f,sha256=digest(file=f,algo="sha256"))),script_sha256="08e2e6c3f0680a8d3bafb6f70a1aad5d5ef36d6f06113aacce3aa85c7a65c5e1")
 signature <- digest(receipt,algo="sha256")
 legacy_receipt <- receipt;legacy_receipt$script_sha256 <- "d13842f714996f474c7a52f8eb55e1f952c4a2187db894938151401870108fdd"
 legacy_signature <- digest(legacy_receipt,algo="sha256")
-paths <- list.files(file.path(out,"checkpoints"),pattern="^chunk_[0-9]+[.]rds$",full.names=TRUE)
+checkpoint_directory <- if(is.null(cfg$extraction_checkpoint_directory))file.path(out,"checkpoints") else cfg$extraction_checkpoint_directory
+paths <- list.files(checkpoint_directory,pattern="^chunk_[0-9]+[.]rds$",full.names=TRUE)
 stopifnot(length(paths)==ceiling(nrow(d)/cfg$chunk_size))
 for(i in seq_along(paths)) {
  q <- readRDS(paths[i]);stopifnot(q$signature %in% c(signature,legacy_signature),
