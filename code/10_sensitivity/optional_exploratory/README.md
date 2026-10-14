@@ -75,3 +75,31 @@ To correct rounded metadata without recalculating valid tables, set
 configuration may declare `grid_metadata` and a new `verification_filename`.
 The verifier binds precise metadata to the original raster hashes and checks
 unchanged extent and dimensions. Earlier metadata and checks remain available.
+
+## Joint coastal comparisons and occurrence records
+
+Run `coastal_joint_extract.R CONFIG.json`, then
+`coastal_joint_association.R CONFIG.json`. Cached city geometries are intersected
+by cohort and land use. Whole cities failing either source-category or joint
+category overlap are excluded. Within-city estimates condition on land use;
+matched use contrasts condition on city and cohort. Between-city models report
+separate sample-size and rank gates. Run `verify_coastal_joint.R CONFIG.json`
+afterwards to reconstruct native weighted means and within-city point estimates.
+
+Run `gbif_temporal_prepare.R CONFIG.json`, `gbif_temporal_extract.py CONFIG.json`,
+`gbif_temporal_join.R CONFIG.json`, then `verify_gbif_temporal.py CONFIG.json`.
+The database is opened read-only and checked against its declared checksum.
+Outputs describe first recorded target taxa, including pre-cohort and uncertain
+records. Local alien status, establishment and arrival dates remain unresolved.
+Mining footprints have no assigned reclamation completion date.
+
+## Mining polygon support
+
+Run `mining_polygon_support.R CONFIG.json`,
+`verify_mining_polygon_support.py CONFIG.json`, then
+`verify_mining_cluster_intervals.py CONFIG.json`. Native-cell fractions allocate
+source totals across entire mine footprints; they do not identify reclaimed
+patches. Shared response cells are collapsed before fitting. A separate
+large-polygon subset requires at least three cells and two effective cells.
+Chunk checkpoints allow continuation without replacing completed extraction.
+The interval verifier also applies to the earlier centroid screen.
