@@ -6,14 +6,18 @@ import json
 import math
 from pathlib import Path
 from binary_thresholds import maximum_tss, quantile_type7
+from binary_batch_completion import discover_batches
 
 
 def verify(directory):
     root = Path(directory)
     receipts = []
-    for table in sorted(root.rglob('thresholds.csv')):
-        with table.open(newline='', encoding='utf-8-sig') as stream:
-            rows = list(csv.DictReader(stream))
+    batches = discover_batches(root)
+    for batch in batches:
+        if batch['status'] != 'COMPLETED_BATCH' or not batch['rows']:
+            continue
+        table = Path(batch['directory']) / 'thresholds.csv'
+        rows = batch['rows']
         for row in rows:
             source = table.parent / row['point_score_table']
             with source.open(newline='', encoding='utf-8-sig') as stream:
@@ -39,7 +43,9 @@ def verify(directory):
     if not receipts:
         raise ValueError('No completed threshold tables found')
     return dict(status='PASS' if all(x['status'] == 'PASS' for x in receipts) else 'FAIL',
-                products=len(receipts), records=receipts)
+                products=len(receipts), records=receipts,
+                skipped_incomplete_batches=[{k:b[k] for k in ('directory','status','reason')}
+                    for b in batches if b['status']!='COMPLETED_BATCH'])
 
 
 if __name__ == '__main__':

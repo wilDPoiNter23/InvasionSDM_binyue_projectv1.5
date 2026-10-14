@@ -33,11 +33,13 @@ class ThresholdTests(unittest.TestCase):
     def test_independent_receipt_detects_wrong_cutpoint(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            (root / 'availability.txt').write_text('requested 1\ncomputed 1\nexcluded 0\n')
             with (root / 'scores.csv').open('w', newline='') as stream:
                 writer = csv.writer(stream)
                 writer.writerow(['score_raw', 'label'])
                 writer.writerows([(0, 0), (100, 0), (800, 1), (900, 1)])
             row = dict(species='Example species', group='FULL', point_score_table='scores.csv',
+                       projection_path='synthetic_map',formatted_input_path='synthetic_formatted',scale_divisor=1000,
                        t10_raw=810, max_tss_raw=800, max_tss=1,
                        n_finite_presence=2, n_finite_background=2,
                        validation_scope='CURRENT_MAP_CALIBRATION_POOLED_PA', boundary='score >= cutoff')

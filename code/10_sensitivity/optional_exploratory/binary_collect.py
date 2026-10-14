@@ -4,6 +4,7 @@ import csv
 import hashlib
 import json
 from pathlib import Path
+from binary_batch_completion import discover_batches
 
 
 def read(path):
@@ -22,9 +23,17 @@ def write(path, rows, fields=None):
 
 def harvest(root):
     computed, failures, inputs = {}, {}, []
-    for table in sorted(Path(root).rglob('thresholds.csv')):
+    for batch in discover_batches(root):
+        if batch['status'] != 'COMPLETED_BATCH':
+            continue
+        directory = Path(batch['directory'])
+        table = directory / 'thresholds.csv'
+        for row in batch['exclusions']:
+            failures[row['species']] = row['reason']
+        if not batch['rows']:
+            continue
         inputs.append(dict(path=str(table), sha256=hashlib.sha256(table.read_bytes()).hexdigest()))
-        for row in read(table):
+        for row in batch['rows']:
             species = row['species']
             if species in computed:
                 raise ValueError('Duplicate threshold product: ' + species)
@@ -32,9 +41,6 @@ def harvest(root):
             if not Path(row['point_score_table']).is_file():
                 raise ValueError('Point score backing table missing')
             computed[species] = row
-    for table in sorted(Path(root).rglob('excluded.csv')):
-        for row in read(table):
-            failures[row['species']] = row['reason']
     return computed, failures, inputs
 
 
@@ -93,6 +99,9 @@ def collect(config):
         common_complete_pairs=len(complete_pairs), paired_threshold_complete=len(complete_pairs) == 684,
         requested_unique_products=814 + len(expected['paired_full_distinct']) + 684,
         missing_records=len(missing), input_threshold_tables=source_main + source_env + source_distinct,
+        skipped_incomplete_batches=[{k:b[k] for k in ('directory','status','reason')}
+            for root in (config['main_threshold_root'],config['env_threshold_root'],config['distinct_threshold_root'])
+            for b in discover_batches(root) if b['status']!='COMPLETED_BATCH'],
         scope='CURRENT_MAP_CALIBRATION_POOLED_PA',
         interpretation='Calibration sensitivity; accepted source does not establish independently held-out validation or scientific acceptance.')
     (out / 'collection_receipt.json').write_text(json.dumps(receipt, indent=2), encoding='utf-8')
