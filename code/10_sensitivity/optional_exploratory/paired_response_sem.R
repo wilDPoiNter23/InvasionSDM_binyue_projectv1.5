@@ -44,6 +44,22 @@ component_fit <- function(d,intensity=FALSE){
  effects <- c(effects,indirect=sum(effects[-1]),total=sum(effects))
  list(edges=edges,effects=effects,fit=list(n=nrow(d),r2=vapply(fits,function(m)summary(m)$r.squared,numeric(1))))
 }
+component_bootstrap_cache <- function(d,intensity=FALSE){
+ lapply(component_formulas(intensity),function(f)list(X=model.matrix(f,d),y=d[[all.vars(f)[1]]]))
+}
+component_bootstrap_effects <- function(cache,rows){
+ coefficients<-lapply(cache,function(q){
+  fit<-lm.fit(q$X[rows,,drop=FALSE],q$y[rows])
+  if(fit$rank!=ncol(q$X)||any(!is.finite(fit$coefficients)))stop("Rank or coefficient gate failed")
+  fit$coefficients
+ })
+ b<-function(response,predictor)unname(coefficients[[response]][predictor])
+ effects<-c(direct=b("y","recl"),via_soc=b("soc","recl")*b("y","soc"),
+  via_soil=b("soil","recl")*b("y","soil"),via_marine_soil=b("marine","recl")*b("soil","marine")*b("y","soil"),
+  via_soc_soil=b("soc","recl")*b("soil","soc")*b("y","soil"),
+  via_soc_marine_soil=b("soc","recl")*b("marine","soc")*b("soil","marine")*b("y","soil"))
+ c(effects,indirect=sum(effects[-1]),total=sum(effects))
+}
 main <- function(){
  suppressPackageStartupMessages({library(jsonlite);library(digest)})
  cfg <- fromJSON(commandArgs(TRUE)[1],simplifyVector=FALSE);out<-cfg$output_root
@@ -109,9 +125,11 @@ main <- function(){
    a$edges$case<-nm;a$edges$frozen_species_n<-ca$species_n;edges[[nm]]<-a$edges
    B<-as.integer(cfg$bootstrap_replicates);if(B<99L)stop("Bootstrap support must include at least 99 replicates")
    boot<-matrix(NA_real_,B,length(a$effects),dimnames=list(NULL,names(a$effects)))
+   cache<-component_bootstrap_cache(z,ca$intensity)
    for(b in seq_len(B)){
-    fit<-tryCatch(component_fit(z[sample.int(nrow(z),nrow(z),replace=TRUE),],ca$intensity),error=function(e)NULL)
-    if(!is.null(fit))boot[b,]<-fit$effects
+    rows<-sample.int(nrow(z),nrow(z),replace=TRUE)
+    fit<-tryCatch(component_bootstrap_effects(cache,rows),error=function(e)NULL)
+    if(!is.null(fit))boot[b,]<-fit
    }
    success<-complete.cases(boot);if(mean(success)<.95)stop("Bootstrap convergence support below 95 percent")
    ci<-apply(boot[success,,drop=FALSE],2,quantile,c(.025,.975))
@@ -129,7 +147,7 @@ main <- function(){
  receipts$predictor_sha256<-digest(file=cfg$city_predictors,algo="sha256")
  receipts$configuration_sha256<-digest(file=commandArgs(TRUE)[1],algo="sha256")
  write_json(list(status="ADAPTED_UNSUPERVISED_PC_COMPONENT_SENSITIVITY",inputs=receipts,
-  bootstrap="City resampling; original per-case standardization fixed for all replicates",formulas=lapply(component_formulas(),function(f)paste(deparse(f),collapse=" ")),
+  bootstrap="City resampling; original per-case standardization fixed; cached design matrices and lm.fit preserve the original equations and draw stream",formulas=lapply(component_formulas(),function(f)paste(deparse(f),collapse=" ")),
   path_pruning=FALSE,city_area_in_every_equation=TRUE,causal_interpretation=FALSE,original_sem_reproduction=FALSE,
   binary_species_scope=if(is.null(cfg$binary_city_responses))"NOT_REQUESTED"else if(species_count==684L)"STRICT_PAIRED_684"else "ADAPTED_FIXED_ELIGIBILITY_CORE",
   limitations=c("Fixed city PCs use unsupervised predictor variation; old risk-supervised composite weights are excluded",

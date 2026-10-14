@@ -4,6 +4,22 @@ suppressPackageStartupMessages(library(jsonlite))
 args<-commandArgs(TRUE);source(args[1]);out<-args[2];dir.create(out,recursive=TRUE)
 if(file.exists(file.path(out,"config.json")))stop("Existing fixture retained")
 set.seed(20261014);n<-108L
+saved_rng<-.Random.seed
+test_data<-as.data.frame(matrix(rnorm(84*8),84,8));names(test_data)<-c("y","recl","soc","clim","soil","marine","city_area","intensity")
+resamples<-list(c(rep(1L,12),seq_len(72)),rep(seq_len(42),each=2L),rev(seq_len(84)),sample.int(84,84,replace=TRUE))
+for(adjustment in c(FALSE,TRUE)){
+ cache<-component_bootstrap_cache(test_data,adjustment)
+ for(ix in resamples){
+  reference<-component_fit(test_data[ix,],adjustment)$effects
+  fast<-component_bootstrap_effects(cache,ix)
+  stopifnot(identical(names(reference),names(fast)),max(abs(reference-fast))<1e-10)
+ }
+ ix<-rep(1L,84)
+ slow_failed<-inherits(tryCatch(component_fit(test_data[ix,],adjustment),error=function(e)e),"error")
+ fast_failed<-inherits(tryCatch(component_bootstrap_effects(cache,ix),error=function(e)e),"error")
+ stopifnot(slow_failed,fast_failed)
+}
+.Random.seed<-saved_rng
 p<-data.frame(city=paste0("city",seq_len(n)),reclamation_area=exp(rnorm(n)),area_km2=exp(rnorm(n,5)))
 raw<-unique(c(pc_groups(p)$anthro_pc1,pc_groups(p)$soil_pc1,pc_groups(p)$marine_pc1,paste0("wc2.1_2.5m_bio_",1:19)))
 for(field in raw)p[[field]]<-rnorm(n)

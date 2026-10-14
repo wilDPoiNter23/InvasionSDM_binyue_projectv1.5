@@ -19,6 +19,7 @@ for(domain in unique(loadings$domain)){
  stopifnot(identical(is.finite(frozen[[domain]]),cc),max(abs(orientation*scores-existing))<1e-8)
 }
 nodes<-c("recl","soc","marine","soil","y")
+set.seed(cfg$seed)
 for(nm in unique(edges$case)){
  e<-edges[edges$case==nm,];d<-read.csv(file.path(out,paste0("data_",nm,".csv")),check.names=FALSE)
  if(support$response_type[support$case==nm]=="binary"){
@@ -39,6 +40,25 @@ for(nm in unique(edges$case)){
  z<-effects[effects$case==nm,];reported<-z$estimate[z$effect=="total"]
  stopifnot(abs(total-reported)<1e-10,abs(sum(z$estimate[z$effect %in% c("direct","via_soc","via_soil","via_marine_soil","via_soc_soil","via_soc_marine_soil")])-reported)<1e-10)
  b<-draws[draws$case==nm,];ok<-complete.cases(b)
+ # Consume the same city-index draw stream and independently refit selected draws.
+ for(replicate in seq_len(nrow(b))){
+  rows<-sample.int(nrow(d),nrow(d),replace=TRUE)
+  if(replicate<=3L){
+   sampled_edges<-e
+   for(response in unique(e$response)){
+    q<-e[e$response==response,];X<-cbind(1,as.matrix(d[rows,q$predictor,drop=FALSE]))
+    beta<-drop(qr.solve(X,d[[response]][rows]))[-1]
+    sampled_edges$estimate[sampled_edges$response==response]<-beta
+   }
+   edge<-function(response,predictor)sampled_edges$estimate[sampled_edges$response==response&sampled_edges$predictor==predictor]
+   expected<-c(direct=edge("y","recl"),via_soc=edge("soc","recl")*edge("y","soc"),
+    via_soil=edge("soil","recl")*edge("y","soil"),via_marine_soil=edge("marine","recl")*edge("soil","marine")*edge("y","soil"),
+    via_soc_soil=edge("soc","recl")*edge("soil","soc")*edge("y","soil"),
+    via_soc_marine_soil=edge("soc","recl")*edge("marine","soc")*edge("soil","marine")*edge("y","soil"))
+   expected<-c(expected,indirect=sum(expected[-1]),total=sum(expected))
+   stopifnot(max(abs(as.numeric(b[replicate,names(expected)])-expected))<1e-10)
+  }
+ }
  stopifnot(all(abs(b$total[ok]-b$direct[ok]-b$via_soc[ok]-b$via_soil[ok]-b$via_marine_soil[ok]-b$via_soc_soil[ok]-b$via_soc_marine_soil[ok])<1e-10))
  for(effect in z$effect){ci<-quantile(b[[effect]][ok],c(.025,.975));row<-z[z$effect==effect,];stopifnot(max(abs(ci-c(row$lower,row$upper)))<1e-10)}
  checks[[nm]]<-data.frame(case=nm,n=nrow(d),matrix_total=total,reported_total=reported)
@@ -51,7 +71,7 @@ if(nrow(binary)){
 }
 write.csv(do.call(rbind,checks),file.path(out,"numerical_verification.csv"),row.names=FALSE)
 write_json(list(status="PASS_COMPONENT_PATH_NUMERICAL_QA",cases=length(checks),
- independent_methods=c("Predictor-only SVD PC reconstruction","Normal-equation coefficient refit","Scalar DAG matrix inverse","All six directed path sums","Bootstrap percentile reconstruction"),
+ independent_methods=c("Predictor-only SVD PC reconstruction","Normal-equation coefficient refit","Scalar DAG matrix inverse","All six directed path sums","Bootstrap percentile reconstruction","Seeded city-index stream with independent QR refits for first three replicates per case"),
  binary_species_count=if(nrow(binary))species_count else NULL,binary_denominator_and_response_transform_checked=TRUE,
  causal_or_original_sem_acceptance=FALSE),file.path(out,"verification.json"),auto_unbox=TRUE,pretty=TRUE)
 cat("PASS_COMPONENT_PATH_NUMERICAL_QA",length(checks),"\n")
