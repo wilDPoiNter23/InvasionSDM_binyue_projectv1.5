@@ -101,3 +101,21 @@ authorisation before rerunning models, deleting assets, publishing or merging.
 Use external configuration instead of personal absolute paths in public files.
 Do not create duplicate code trees or competing manifests. Reuse the relevant
 existing stage directory and update its documentation when authorised.
+
+## Server code deployment
+
+Maintain one Git checkout for this project on each execution server. Declare its
+location in the existing private project instructions and deployment record.
+Run maintained scientific scripts from that checkout; do not create another
+checkout inside a data package or maintain independent script copies per run.
+Keep other manuscript projects in their own repositories.
+Before updating a checkout, verify its branch, commit, clean working tree and
+active-job dependencies. Do not switch or update code consumed by running jobs.
+Record the exact commit, script checksums, configuration and external input and
+output locations for each run. Keep private configuration and outputs untracked.
+When network access is unavailable, transfer a verified Git bundle through the
+existing release staging location. Verify the checkout and run the mandatory
+layout check after import. Resume normal fetching when network access returns.
+Retire redundant transfer bundles after successful import and verification.
+Historical source and unique execution evidence need separate preservation and
+dependency checks before any author-authorised deletion.

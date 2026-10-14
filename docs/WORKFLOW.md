@@ -2,6 +2,15 @@
 
 Run from the repository root using an R environment compatible with the supplied model objects. Copy config/config.example.R to config/config.local.R first. Input paths remain external; output paths are configured separately. Do not place credentials in tracked files.
 
+Use one maintained Git checkout per execution server. Record its branch and
+commit before execution, and keep run-specific results and logs outside it.
+Update only a clean checkout whose scripts are not being consumed by active
+jobs. An offline deployment may use a verified Git bundle; import it into the
+same checkout, verify the commit and run the repository layout check. Set the
+remote to the upstream repository for normal updates when network access is
+available. Historical production snapshots remain provenance assets until their
+replacement and preservation are verified.
+
 ## Main analysis
 
 1. Prepare accepted species and city inventories with code/01_data_preparation. The taxonomic roster is distinct from the contributor list for any one suitability raster.
