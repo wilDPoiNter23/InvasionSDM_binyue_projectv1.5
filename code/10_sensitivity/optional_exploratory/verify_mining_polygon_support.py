@@ -15,7 +15,10 @@ def rows(path):
 
 
 def ring_area(ring):
-    return .5*sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(ring,ring[1:]+ring[:1]))
+    if not ring:return 0.0
+    origin=ring[0]
+    shifted=[(x-origin[0],y-origin[1]) for x,y in ring]
+    return .5*math.fsum(a[0]*b[1]-b[0]*a[1] for a,b in zip(shifted,shifted[1:]+shifted[:1]))
 
 
 def clip_ring(ring, bounds):
@@ -78,7 +81,7 @@ def shape_rings(path, selected, id_field):
 
 def main():
     cfg=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8-sig")); out=Path(cfg["output_root"])
-    target=out/"polygon_independent_verification.json"
+    target=out/cfg.get("polygon_verification_filename","polygon_independent_verification.json")
     if target.exists():
         raise FileExistsError("Existing polygon verification retained")
     source={r["polygon_id"]:r for r in rows(cfg["mining_csv"])}
@@ -145,19 +148,23 @@ def main():
         correction_keys={(r["polygon_id"],r["cell"]) for r in corrections}
         sample += [r for r in overlaps if (r["polygon_id"],r["cell"]) in correction_keys]
     shapes=shape_rings(cfg["mining_shapefile"],{r["polygon_id"] for r in sample},cfg["polygon_id_field"])
-    max_error=0.0
+    max_error=0.0; comparisons=[]
     for r in sample:
         cell=int(r["cell"])-1; col=cell%grid["ncol"]; row=cell//grid["ncol"]
         x=grid["xmin"]+col*grid["xres"]; y=grid["ymax"]-row*grid["yres"]
         bounds=(x,x+grid["xres"],y-grid["yres"],y)
         ringlist=shapes[r["polygon_id"]]
         fraction=abs(sum(ring_area(clip_ring(ring,bounds)) for ring in ringlist))/(grid["xres"]*grid["yres"])
-        max_error=max(max_error,abs(fraction-float(r["fraction"])))
+        error=abs(fraction-float(r["fraction"]))
+        max_error=max(max_error,error)
+        comparisons.append(dict(polygon_id=r["polygon_id"],cell=r["cell"],stored_fraction=float(r["fraction"]),
+          independent_fraction=fraction,absolute_error=error))
     check("independent rectangle clipping agrees with exact native fractions",max_error<1e-6)
     check("native cell keys unique per scope",len({(r["scope"],r["cell"]) for r in cells})==len(cells))
     passed=all(c["passed"] for c in checks)
     report={"status":"PASS_POLYGON_SUPPORT" if passed else "FAIL","checks":checks,
             "n_sampled_intersections":len(sample),"max_sample_fraction_absolute_error":max_error,
+            "largest_fraction_differences":sorted(comparisons,key=lambda r:r["absolute_error"],reverse=True)[:5],
             "scope":"Source totals, support allocation and independent planar native intersections; cluster intervals checked separately",
             "independent_raster_read":False,"scientific_acceptance":False}
     target.write_text(json.dumps(report,indent=2)+"\n"); print(json.dumps(report,indent=2))
