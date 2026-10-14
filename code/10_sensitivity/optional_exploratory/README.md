@@ -87,7 +87,8 @@ separate sample-size and rank gates. Run `verify_coastal_joint.R CONFIG.json`
 afterwards to reconstruct native weighted means and within-city point estimates.
 
 Run `gbif_temporal_prepare.R CONFIG.json`, `gbif_temporal_extract.py CONFIG.json`,
-`gbif_temporal_join.R CONFIG.json`, then `verify_gbif_temporal.py CONFIG.json`.
+`gbif_temporal_join.R CONFIG.json`, then `verify_gbif_temporal.py OUTPUT_DIRECTORY RECEIPT.json` and
+`verify_gbif_spatial.R CONFIG.json`.
 The database is opened read-only and checked against its declared checksum.
 Outputs describe first recorded target taxa, including pre-cohort and uncertain
 records. Local alien status, establishment and arrival dates remain unresolved.

@@ -139,6 +139,11 @@ def main():
     check("shared native cells collapsed with preserved response identity",aggregate)
     # Spread deterministic samples across the full intersection table.
     sample=[overlaps[i] for i in sorted({round(i*(len(overlaps)-1)/127) for i in range(128)})]
+    correction_file=out / "fraction_precision_corrections.csv"
+    if correction_file.exists():
+        corrections=rows(correction_file)
+        correction_keys={(r["polygon_id"],r["cell"]) for r in corrections}
+        sample += [r for r in overlaps if (r["polygon_id"],r["cell"]) in correction_keys]
     shapes=shape_rings(cfg["mining_shapefile"],{r["polygon_id"] for r in sample},cfg["polygon_id_field"])
     max_error=0.0
     for r in sample:

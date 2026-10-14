@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Exact native-grid support with footprint-distributed landscape activity.
-suppressPackageStartupMessages({library(terra); library(jsonlite); library(digest)})
+suppressPackageStartupMessages({library(terra); library(sf); library(jsonlite); library(digest)})
 args <- commandArgs(TRUE)
 if(length(args)<1L || length(args)>2L) stop("Supply configuration and optional new-chunk limit")
 cfg <- fromJSON(args[1],simplifyVector=FALSE)
@@ -37,6 +37,10 @@ script <- sub("^--file=","",grep("^--file=",commandArgs(FALSE),value=TRUE))
 receipt <- list(inputs=lapply(unname(inputs),function(f)list(path=f,sha256=digest(file=f,algo="sha256"))),
                 script_sha256=digest(file=script,algo="sha256"))
 signature <- digest(receipt,algo="sha256")
+# Earlier checkpoints passed the same geometry gates and contain no excess fraction.
+legacy_receipt <- receipt
+legacy_receipt$script_sha256 <- "d13842f714996f474c7a52f8eb55e1f952c4a2187db894938151401870108fdd"
+legacy_signature <- digest(legacy_receipt,algo="sha256")
 chunks <- split(seq_len(nrow(d)),ceiling(seq_len(nrow(d))/cfg$chunk_size))
 checkpoint_dir <- file.path(out,"checkpoints")
 dir.create(checkpoint_dir,showWarnings=FALSE)
@@ -45,7 +49,7 @@ for(j in seq_along(chunks)) {
   target <- file.path(checkpoint_dir,sprintf("chunk_%05d.rds",j))
   if(file.exists(target)) {
     saved <- readRDS(target)
-    stopifnot(identical(saved$signature,signature),identical(saved$indices,chunks[[j]]))
+    stopifnot(saved$signature %in% c(signature,legacy_signature),identical(saved$indices,chunks[[j]]))
     next
   }
   index <- chunks[[j]]; geom <- v[index,]
@@ -54,13 +58,29 @@ for(j in seq_along(chunks)) {
   good <- which(!is.na(valid)&valid)
   skipped <- data.frame(polygon_id=ids[index[setdiff(seq_along(index),good)]],
                          reason=rep("INVALID_OR_UNKNOWN_GEOMETRY",length(index)-length(good)))
-  overlap <- data.frame()
+  overlap <- data.frame(); corrections <- data.frame()
   if(length(good)) {
     z <- extract(responses,geom[good,],exact=TRUE,cells=TRUE,ID=TRUE)
     stopifnot(all(c("ID","cell","fraction","FULL","ENV") %in% names(z)))
     z <- z[is.finite(z$cell)&is.finite(z$fraction)&z$fraction>0,]
     if(nrow(z)) {
       z$polygon_index <- index[good[z$ID]]
+      excessive <- which(z$fraction>1+1e-8)
+      if(length(excessive))for(k in excessive) {
+        stopifnot(z$fraction[k]<=1+1e-4)
+        xy0 <- xyFromCell(r,z$cell[k]); half <- res(r)/2
+        box <- matrix(c(xy0[1]-half[1],xy0[2]-half[2],
+          xy0[1]+half[1],xy0[2]-half[2],xy0[1]+half[1],xy0[2]+half[2],
+          xy0[1]-half[1],xy0[2]+half[2],xy0[1]-half[1],xy0[2]-half[2]),ncol=2,byrow=TRUE)
+        polygon <- st_set_crs(st_geometry(st_as_sf(geom[good[z$ID[k]],])),NA)
+        cell_polygon <- st_sfc(st_polygon(list(box)))
+        corrected <- sum(as.numeric(st_area(suppressWarnings(st_intersection(polygon,cell_polygon)))))/prod(res(r))
+        stopifnot(is.finite(corrected),corrected>0,corrected<=1+1e-8,
+          abs(corrected-z$fraction[k])<1e-4)
+        corrections <- rbind(corrections,data.frame(polygon_id=ids[z$polygon_index[k]],cell=z$cell[k],
+          terra_fraction=z$fraction[k],planar_intersection_fraction=corrected))
+        z$fraction[k] <- corrected
+      }
       stopifnot(!anyDuplicated(paste(z$polygon_index,z$cell)),all(z$fraction<=1+1e-8))
       xy <- xyFromCell(r,z$cell); rad <- pi/180; dy <- res(r)[2]/2
       area <- 6371.0088^2*res(r)[1]*rad*(sin((xy[,2]+dy)*rad)-sin((xy[,2]-dy)*rad))
@@ -69,7 +89,7 @@ for(j in seq_along(chunks)) {
     }
   }
   partial <- paste0(target,".partial")
-  saveRDS(list(signature=signature,indices=index,overlap=overlap,excluded=skipped),partial)
+  saveRDS(list(signature=signature,indices=index,overlap=overlap,excluded=skipped,corrections=corrections),partial)
   stopifnot(file.rename(partial,target))
   new_chunks <- new_chunks+1L
   cat("Checkpoint",j,"of",length(chunks),"; intersections",nrow(overlap),"\n")
@@ -78,6 +98,10 @@ for(j in seq_along(chunks)) {
 saved <- lapply(seq_along(chunks),function(j)readRDS(file.path(checkpoint_dir,sprintf("chunk_%05d.rds",j))))
 z <- do.call(rbind,lapply(saved,`[[`,"overlap")); excluded <- do.call(rbind,lapply(saved,`[[`,"excluded"))
 stopifnot(nrow(z)>0,!anyDuplicated(paste(z$polygon_id,z$cell)))
+corrections <- do.call(rbind,lapply(saved,`[[`,"corrections"))
+if(!is.null(corrections)&&nrow(corrections))write.csv(corrections,file.path(out,"fraction_precision_corrections.csv"),row.names=FALSE)
+write.csv(data.frame(chunk=seq_along(saved),signature=vapply(saved,`[[`,character(1),"signature")),
+  file.path(out,"checkpoint_source_signatures.csv"),row.names=FALSE)
 write.csv(excluded,file.path(out,"geometry_exclusions.csv"),row.names=FALSE)
 unsupported <- data.frame(polygon_id=setdiff(ids,z$polygon_id))
 write.csv(unsupported,file.path(out,"unsupported_polygons.csv"),row.names=FALSE)
@@ -164,7 +188,8 @@ if(length(omissions)) write.csv(do.call(rbind,omissions),file.path(out,"model_om
 writeLines(capture.output(sessionInfo()),file.path(out,"sessionInfo.txt"))
 grid <- list(xmin=xmin(r),xmax=xmax(r),ymin=ymin(r),ymax=ymax(r),xres=res(r)[1],yres=res(r)[2],ncol=ncol(r),nrow=nrow(r),crs=crs(r))
 write_json(list(status="POLYGON_SUPPORT_CALCULATED_PENDING_INDEPENDENT_CHECK",grid=grid,receipt=receipt,
-  checkpoint_signature=signature,n_polygons=nrow(d),n_supported_polygons=nrow(p),n_excluded_geometry=nrow(excluded),
+  checkpoint_signature=signature,compatible_previous_signature=legacy_signature,
+  precision_corrections=if(is.null(corrections))0L else nrow(corrections),n_polygons=nrow(d),n_supported_polygons=nrow(p),n_excluded_geometry=nrow(excluded),
   exact_native_fraction=TRUE,native_grid_changed=FALSE,shared_cell_duplicates_collapsed=TRUE,
   area_weight_method="Exact longitude-latitude cell fraction multiplied by spherical native-cell area",
   caveat="Mine-period totals allocated uniformly across mine footprint as landscape proxies; repeated transitions possible; no dated patch locations or observed invasion",
