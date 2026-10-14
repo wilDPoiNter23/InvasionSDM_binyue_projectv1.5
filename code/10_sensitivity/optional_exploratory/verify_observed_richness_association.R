@@ -1,12 +1,27 @@
 #!/usr/bin/env Rscript
 # Check saved count likelihoods, stationary points and curvature independently.
 suppressPackageStartupMessages(library(jsonlite))
-cfg <- fromJSON(commandArgs(TRUE)[1],simplifyVector=FALSE);out <- file.path(cfg$output_root,"association")
+cfg <- fromJSON(commandArgs(TRUE)[1],simplifyVector=FALSE)
+directory <- if(is.null(cfg$association_directory))"association"else cfg$association_directory
+if(length(directory)!=1L||!grepl("^[A-Za-z0-9_-]+$",directory))stop("Invalid association directory name")
+out <- file.path(cfg$output_root,directory)
 receipt <- file.path(out,"numerical_verification.json")
 if(file.exists(receipt))stop("Existing verification retained")
 if(!file.exists(file.path(out,"models.csv")))stop("No fitted models to verify")
 m <- read.csv(file.path(out,"models.csv"));c <- read.csv(file.path(out,"coefficients.csv"))
 d <- read.csv(file.path(out,"city_analysis_data.csv"));stored <- read.csv(file.path(out,"residuals.csv"))
+crosswalk <- read.csv(file.path(out,"city_identity_crosswalk.csv"),stringsAsFactors=FALSE)
+predictors <- read.csv(cfg$city_predictors,stringsAsFactors=FALSE,check.names=FALSE)
+normalize <- function(x)chartr("ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz",trimws(as.character(x)))
+stopifnot(nrow(crosswalk)==cfg$expected_city_count,!anyDuplicated(crosswalk$city_id),!anyDuplicated(crosswalk$normalized_city_key),
+ !anyDuplicated(crosswalk$predictor_city),setequal(crosswalk$predictor_city,predictors[[cfg$predictor_city_field]]),
+ all(normalize(crosswalk$city_id)==normalize(crosswalk$predictor_city)),all(crosswalk$normalized_city_key==normalize(crosswalk$city_id)),
+ setequal(unique(d$city_id),crosswalk$city_id))
+for(i in seq_len(nrow(crosswalk))){
+ original <- predictors[predictors[[cfg$predictor_city_field]]==crosswalk$predictor_city[i],,drop=FALSE]
+ bound <- d[d$city_id==crosswalk$city_id[i],,drop=FALSE]
+ for(field in c("reclamation_area","area_km2"))stopifnot(all(bound[[field]]==original[[field]]|is.na(bound[[field]])&is.na(original[[field]])))
+}
 checks <- list()
 for(i in seq_len(nrow(m))){
  a <- m[i,];co <- c[c$scope==a$scope&c$window==a$window&c$model==a$model,,drop=FALSE]
@@ -45,5 +60,5 @@ for(i in seq_len(nrow(m))){
 write.csv(do.call(rbind,checks),file.path(out,"numerical_checks.csv"),row.names=FALSE)
 write_json(list(status="PASS_NUMERICAL_LIKELIHOOD",models=nrow(m),
  independently_recomputed=c("Log likelihood","AIC","Finite-difference score","Finite-difference Hessian","Coefficient standard errors"),
- scientific_acceptance=FALSE),receipt,auto_unbox=TRUE,pretty=TRUE)
+ crosswalk_and_area_binding_verified=TRUE,scientific_acceptance=FALSE),receipt,auto_unbox=TRUE,pretty=TRUE)
 cat("PASS_NUMERICAL_LIKELIHOOD",nrow(m),"\n")

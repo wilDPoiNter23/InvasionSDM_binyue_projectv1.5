@@ -2,7 +2,9 @@
 # Fit parsimonious conditional count associations among observed cities.
 suppressPackageStartupMessages({library(jsonlite);library(digest)})
 args <- commandArgs(TRUE);cfg <- fromJSON(args[1],simplifyVector=FALSE);out <- cfg$output_root
-dest <- file.path(out,"association")
+association_directory <- if(is.null(cfg$association_directory))"association"else cfg$association_directory
+if(length(association_directory)!=1L||!grepl("^[A-Za-z0-9_-]+$",association_directory))stop("Invalid association directory name")
+dest <- file.path(out,association_directory)
 if(dir.exists(dest))stop("Existing associations retained")
 dir.create(dest)
 p <- read.csv(cfg$city_predictors,stringsAsFactors=FALSE,check.names=FALSE)
@@ -14,7 +16,19 @@ pc_complete <- if(all(pc_fields %in% names(p)))sum(complete.cases(p[,pc_fields])
 if(!is.null(cfg$expected_pc_complete) && (is.na(pc_complete)||pc_complete!=cfg$expected_pc_complete))stop("Predictor complete-case contract failed")
 p$city_id <- as.character(p[[cfg$predictor_city_field]])
 d <- read.csv(file.path(out,"city_observed_richness.csv"),stringsAsFactors=FALSE)
-if(!setequal(unique(d$city_id),p$city_id))stop("City predictor identity mismatch")
+normalize_city <- function(x)chartr("ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz",trimws(as.character(x)))
+city_ids <- unique(as.character(d$city_id));city_keys <- normalize_city(city_ids);predictor_keys <- normalize_city(p$city_id)
+differences <- rbind(data.frame(source="city_geometry",original=city_ids,normalized=city_keys,matched=city_keys %in% predictor_keys),
+ data.frame(source="city_predictors",original=p$city_id,normalized=predictor_keys,matched=predictor_keys %in% city_keys))
+write.csv(differences,file.path(dest,"city_identity_differences.csv"),row.names=FALSE)
+if(length(city_ids)!=cfg$expected_city_count||anyNA(city_keys)||anyNA(predictor_keys)||any(!nzchar(city_keys))||any(!nzchar(predictor_keys))||
+ anyDuplicated(city_keys)||anyDuplicated(predictor_keys)||!setequal(city_keys,predictor_keys))stop("Normalized city identity must be a complete one-to-one exact match")
+crosswalk <- data.frame(city_id=city_ids,normalized_city_key=city_keys,predictor_city=p$city_id[match(city_keys,predictor_keys)],stringsAsFactors=FALSE)
+crosswalk$match_type <- ifelse(crosswalk$city_id==crosswalk$predictor_city,"EXACT","ASCII_CASE_AND_OUTER_WHITESPACE")
+write.csv(crosswalk,file.path(dest,"city_identity_crosswalk.csv"),row.names=FALSE)
+p$predictor_city_original <- p$city_id
+p$normalized_city_key <- predictor_keys
+p$city_id <- city_ids[match(predictor_keys,city_keys)]
 d <- merge(d,p,by="city_id",all.x=TRUE,sort=FALSE)
 if(file.exists(file.path(out,"city_geometry.csv"))){
  geometry <- read.csv(file.path(out,"city_geometry.csv"),stringsAsFactors=FALSE)
@@ -88,7 +102,9 @@ if(length(residuals))write.csv(do.call(rbind,residuals),file.path(dest,"residual
 write.csv(d,file.path(dest,"city_analysis_data.csv"),row.names=FALSE,na="")
 write_json(list(status="EXPLORATORY_CONDITIONAL_ASSOCIATION",primary_window="common2010_2024",primary_scope="RAW_SELECTED_INVASIVE",
  formulas=lapply(forms,function(f)paste(deparse(f),collapse=" ")),negative_binomial_trigger="Positive-count Poisson Pearson dispersion > 1.5",
- predictor_sha256=digest(file=cfg$city_predictors,algo="sha256"),predictor_rows=nrow(p),predictor_columns=ncol(p)-1L,complete_pc_cities=pc_complete,
+ predictor_sha256=digest(file=cfg$city_predictors,algo="sha256"),predictor_rows=nrow(p),predictor_columns=ncol(p)-3L,complete_pc_cities=pc_complete,
+ city_identity="One-to-one ASCII lowercase and outer-whitespace exact keys; geometry display names preserved",
+ crosswalk_sha256=digest(file=file.path(dest,"city_identity_crosswalk.csv"),algo="sha256"),
  configuration_sha256=digest(file=args[1],algo="sha256"),
  limitations=c("Target intensity is an endogenous proxy, not independent collecting effort",
  "Positive-count likelihood conditions on observed cities; informative sampling selection is not corrected and unsupported cities have unknown presence",

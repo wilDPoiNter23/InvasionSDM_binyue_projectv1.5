@@ -121,3 +121,22 @@ lineage and binds the reconstructed tables to their checksums. Preserve the
 source extraction, its earlier checks and the separate method comparison.
 Fresh full runs use `mining_polygon_support.R`; the continuation module is
 for the archived extraction lineage declared in the configuration.
+
+## Recorded invasive-species richness
+
+Run `observed_richness_prepare.R`, `observed_richness_extract.py`,
+`observed_richness_join.R`, `verify_observed_richness.R`,
+`observed_richness_association.R`, and
+`verify_observed_richness_association.R` with a private configuration.
+These modules use full-city polygons, explicit species rosters and date windows.
+Unrecorded cities have unknown observation support. Target-record intensity
+is an endogenous recording proxy. Positive-count models condition on cities
+with records and do not correct informative sampling selection.
+
+Run `coastal_observed_association.R CONFIG.json`, then
+`verify_coastal_observed.R CONFIG.json` to reuse dated coastal memberships.
+Common windows occur after all eligible cohort endpoints. Within-city age
+associations require declared minimum support and matched native responses.
+Outputs concern recorded richness, rather than arrival times or true absence.
+Land use is not adjusted in this module. The verifier recounts memberships and
+compares fitted age slopes against a separate city-indicator parameterisation.

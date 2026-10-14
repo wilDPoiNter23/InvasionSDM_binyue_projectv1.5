@@ -10,6 +10,7 @@ mu <- exp(1+.15*log1p(rec)+.1*log1p(area))
 y <- rpois(n,mu);while(any(y==0))y[y==0] <- rpois(sum(y==0),mu[y==0])
 p <- data.frame(city=paste0("City",seq_len(n)),reclamation_area=rec,area_km2=area,anthro_pc1=rnorm(n))
 r <- data.frame(city_id=p$city,scope="RAW_SELECTED_INVASIVE",window="common2010_2024",richness=y,target_record_n=intensity)
+p$city <- paste0(" ",tolower(p$city)," ")
 nb <- r;nb$scope <- "SYNTHETIC_OVERDISPERSED"
 nb$richness <- rnbinom(n,mu=mu,size=2)
 while(any(nb$richness==0))nb$richness[nb$richness==0] <- rnbinom(sum(nb$richness==0),mu=mu[nb$richness==0],size=2)
@@ -18,17 +19,29 @@ unsupported <- r;unsupported$scope <- "SYNTHETIC_UNSUPPORTED";unsupported$richne
 r <- rbind(r,nb,unsupported)
 write.csv(p,file.path(out,"predictors.csv"),row.names=FALSE)
 write.csv(r,file.path(out,"city_observed_richness.csv"),row.names=FALSE)
-cfg <- list(output_root=out,city_predictors=file.path(out,"predictors.csv"),predictor_city_field="city",expected_city_count=n,minimum_model_cities=30,anthro_adjustment=TRUE)
+cfg <- list(output_root=out,association_directory="association_v2",city_predictors=file.path(out,"predictors.csv"),predictor_city_field="city",expected_city_count=n,minimum_model_cities=30,anthro_adjustment=TRUE)
 write_json(cfg,file.path(out,"config.json"),auto_unbox=TRUE)
 status <- system2(file.path(R.home("bin"),"Rscript"),c("--vanilla",shQuote(script),shQuote(file.path(out,"config.json"))))
 stopifnot(status==0L)
-co <- read.csv(file.path(out,"association","coefficients.csv"));m <- read.csv(file.path(out,"association","models.csv"))
+co <- read.csv(file.path(out,"association_v2","coefficients.csv"));m <- read.csv(file.path(out,"association_v2","models.csv"))
 stopifnot(nrow(m)==6L,all(is.finite(co$estimate)),all(is.finite(co$se)),all(m$n[m$scope=="RAW_SELECTED_INVASIVE"]==108L),
  all(m$n[m$scope=="SYNTHETIC_OVERDISPERSED"]==107L),all(m$family[m$scope=="SYNTHETIC_OVERDISPERSED"]=="zero_truncated_negative_binomial"))
-support <- read.csv(file.path(out,"association","model_support.csv"))
+support <- read.csv(file.path(out,"association_v2","model_support.csv"))
 stopifnot(all(support$status[support$scope=="SYNTHETIC_UNSUPPORTED"]=="INSUFFICIENT_SUPPORT"))
 # Independent ordinary Poisson comparison is close when truncation probability is tiny.
 fit <- glm(y~log1p(rec)+log1p(area),family=poisson())
 stopifnot(max(abs(co$estimate[co$model=="M0"&co$scope=="RAW_SELECTED_INVASIVE"]-coef(fit)))<.02)
-write_json(list(status="PASS_SYNTHETIC_COUNT_MODELS",models=nrow(m),poisson_high_mean_comparison=TRUE),file.path(out,"synthetic_association_verification.json"),pretty=TRUE,auto_unbox=TRUE)
+for(case in c("normalization_collision","unmatched_spelling")){
+ child <- file.path(out,case);dir.create(child)
+ bad <- p
+ bad$city[2] <- if(case=="normalization_collision")"CITY1"else "unmatched-city"
+ write.csv(bad,file.path(child,"predictors.csv"),row.names=FALSE)
+ write.csv(r,file.path(child,"city_observed_richness.csv"),row.names=FALSE)
+ badcfg <- cfg;badcfg$output_root <- child;badcfg$city_predictors <- file.path(child,"predictors.csv")
+ write_json(badcfg,file.path(child,"config.json"),auto_unbox=TRUE)
+ status <- system2(file.path(R.home("bin"),"Rscript"),c("--vanilla",shQuote(script),shQuote(file.path(child,"config.json"))),stdout=file.path(child,"stdout.txt"),stderr=file.path(child,"stderr.txt"))
+ stopifnot(status!=0L,file.exists(file.path(child,"association_v2","city_identity_differences.csv")),!file.exists(file.path(child,"association_v2","models.csv")))
+}
+write_json(list(status="PASS_SYNTHETIC_COUNT_MODELS",models=nrow(m),poisson_high_mean_comparison=TRUE,
+ case_whitespace_crosswalk=TRUE,normalization_collision_rejected=TRUE,unmatched_spelling_rejected=TRUE),file.path(out,"synthetic_association_verification.json"),pretty=TRUE,auto_unbox=TRUE)
 cat("PASS_SYNTHETIC_COUNT_MODELS",nrow(m),"\n")
