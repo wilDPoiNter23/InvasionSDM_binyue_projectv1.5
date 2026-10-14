@@ -117,9 +117,9 @@ p <- do.call(rbind,lapply(groups,function(ix) {
 }))
 rownames(p) <- NULL
 write.csv(p,file.path(out,"polygon_support.csv"),row.names=FALSE)
-pi <- match(z$polygon_id,p$polygon_id)
-z$allocation_weight <- z$overlap_km2/p$overlap_area_km2[pi]
-z$large_supported <- p$n_cells[pi]>=cfg$large_minimum_cells & p$effective_cells[pi]>=cfg$large_minimum_effective_cells
+support_index <- match(z$polygon_id,p$polygon_id)
+z$allocation_weight <- z$overlap_km2/p$overlap_area_km2[support_index]
+z$large_supported <- p$n_cells[support_index]>=cfg$large_minimum_cells & p$effective_cells[support_index]>=cfg$large_minimum_effective_cells
 z$country <- d$country_name[z$polygon_index]
 for(k in c("footprint_km2","damage_km2","reclamation_km2","endpoint_area_sum")) {
   values <- if(k=="footprint_km2")d$area_km2_source else d[[k]]
