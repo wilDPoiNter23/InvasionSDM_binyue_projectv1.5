@@ -37,20 +37,48 @@ for(id in c("coastal_change","coastal_landuse")) {
   original_valid <- st_is_valid(x)
   x <- st_transform(st_make_valid(x),6933)
   cat("Intersecting",id,"with cities\n"); flush.console()
-  z <- suppressWarnings(st_intersection(cities[,"city_id",drop=FALSE],x[,"reported_category",drop=FALSE]))
-  z <- suppressWarnings(st_collection_extract(z,"POLYGON"))
-  if(nrow(z)) {
-    groups <- split(seq_len(nrow(z)),paste(z$city_id,z$reported_category,sep="|"))
-    attrs <- st_drop_geometry(z)[vapply(groups,function(ix)ix[1],integer(1)),]
-    merged <- st_sfc(lapply(groups,function(ix)st_union(st_geometry(z)[ix])[[1]]),crs=6933)
-    z <- st_sf(attrs,geometry=merged)
-  }
+  bounds <- t(vapply(st_geometry(x),function(g)as.numeric(st_bbox(g)),numeric(4)))
+  checkpoint_dir <- file.path(out,"geometry_checkpoints",id)
+  dir.create(checkpoint_dir,recursive=TRUE,showWarnings=FALSE)
+  contract <- digest(list(city_ids=cities$city_id,city_geometry=st_geometry(cities),
+    layer=digest(file=cfg$layers[[id]],algo="sha256"),
+    attributes=digest(file=sub("[.]shp$",".dbf",cfg$layers[[id]]),algo="sha256")),algo="sha256")
+  contract_file <- file.path(checkpoint_dir,"input_contract.txt")
+  if(file.exists(contract_file) && readLines(contract_file,warn=FALSE)[1]!=contract)
+    stop("Existing geometry checkpoints use different inputs")
+  if(!file.exists(contract_file))writeLines(contract,contract_file)
+  workers <- max(1L,as.integer(Sys.getenv("SLURM_CPUS_PER_TASK","1")))
+  city_parts <- parallel::mclapply(seq_len(nrow(cities)),function(i) {
+    cache <- file.path(checkpoint_dir,sprintf("city_%03d.rds",i))
+    if(file.exists(cache)) return(readRDS(cache))
+    b <- st_bbox(cities[i,])
+    hit <- which(bounds[,1]<=b[3] & bounds[,3]>=b[1] & bounds[,2]<=b[4] & bounds[,4]>=b[2])
+    if(!length(hit))return(NULL)
+    cat("City",i,id,"parts",length(hit),"\n"); flush.console()
+    q <- suppressWarnings(st_intersection(cities[i,"city_id",drop=FALSE],x[hit,"reported_category",drop=FALSE]))
+    q <- suppressWarnings(st_collection_extract(q,"POLYGON"))
+    if(!nrow(q))return(NULL)
+    groups <- split(seq_len(nrow(q)),q$reported_category)
+    attrs <- st_drop_geometry(q)[vapply(groups,function(ix)ix[1],integer(1)),]
+    merged <- st_sfc(lapply(groups,function(ix)st_union(st_geometry(q)[ix])[[1]]),crs=6933)
+    ans <- st_sf(attrs,geometry=merged)
+    attr(ans,"unique_mapped_km2") <- as.numeric(st_area(st_union(st_geometry(ans))))/1e6
+    saveRDS(ans,paste0(cache,".part"))
+    if(!file.rename(paste0(cache,".part"),cache))stop("Checkpoint rename failed")
+    ans
+  },mc.cores=workers,mc.preschedule=FALSE)
+  if(any(vapply(city_parts,inherits,logical(1),"try-error")))stop("A city geometry worker failed")
+  city_parts <- Filter(Negate(is.null),city_parts)
+  if(!length(city_parts))stop("No mapped city intersection")
+  z <- do.call(rbind,city_parts)
+  unique_areas <- setNames(vapply(city_parts,function(q)attr(q,"unique_mapped_km2"),numeric(1)),
+    vapply(city_parts,function(q)q$city_id[1],character(1)))
   z$area_km2 <- as.numeric(st_area(z))/1e6
   z <- z[z$area_km2>0,]
   write.csv(st_drop_geometry(z),file.path(out,paste0(id,"_city_categories.csv")),row.names=FALSE)
   coverage[[id]] <- do.call(rbind,lapply(seq_len(nrow(cities)),function(i) {
     q <- z[z$city_id==cities$city_id[i],]
-    unique_area <- if(nrow(q)) as.numeric(st_area(st_union(q)))/1e6 else 0
+    unique_area <- if(nrow(q)) unique_areas[[cities$city_id[i]]] else 0
     summed_area <- sum(q$area_km2)
     data.frame(layer=id,city_id=cities$city_id[i],city_area_km2=city_area[i],
       category_count=length(unique(q$reported_category)),mapped_area_km2=unique_area,
