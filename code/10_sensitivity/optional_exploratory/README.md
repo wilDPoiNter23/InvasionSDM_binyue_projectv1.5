@@ -44,3 +44,27 @@ disturbance process and must not be used as coastal land-creation timing.
 
 All data, configurations, outputs and logs belong outside this repository.
 New modules remain optional until the author selects the publication scope.
+
+## Mining reclamation
+
+`mining_reclamation_screen.R CONFIG.json` assigns source mining centroids to
+unchanged FULL and ENV native suitability cells. It aggregates reported damage,
+reclamation and footprint areas before fitting exploratory landscape models.
+Shared-cell mines contribute a single suitability response. A compact-mine
+subset retains mines whose footprint is at most half the approximate cell area.
+This is a centroid screen, not exact extraction from reclaimed patches.
+
+Supply `mining_csv`, `responses` with FULL and ENV keys, `output_root`,
+`maximum_mine_cell_area_ratio`, `minimum_cells_per_country` and
+`spatial_block_degrees`. Amount models adjust for damage, footprint, country
+fixed effects and spherical location trends. Timing models also include the
+reclamation-area-weighted period endpoint. Five- and ten-degree spatial-block
+cluster intervals describe uncertainty under two block definitions.
+An endpoint is not a mine's exact completion date. Cumulative transitions are
+not a bounded percentage of unique land restored. Modelled suitability does not
+measure observed colonization or a change caused by reclamation.
+
+Run `verify_mining_screen.py CONFIG.json` after the R module. It independently
+reconstructs period totals, geographic cell indexing, grouped values and adjusted
+least-squares point estimates. It does not validate ecological causation or
+reconstruct the cluster intervals. Preserve failed checks and earlier runs.
