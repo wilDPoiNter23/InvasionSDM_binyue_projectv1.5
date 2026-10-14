@@ -107,3 +107,17 @@ patches. Shared response cells are collapsed before fitting. A separate
 large-polygon subset requires at least three cells and two effective cells.
 Chunk checkpoints allow continuation without replacing completed extraction.
 The interval verifier also applies to the earlier centroid screen.
+
+For a separate fraction-method sensitivity, supply `fraction_source_output`,
+a new `output_root`, `extraction_configuration` and
+`extraction_checkpoint_directory` in addition to the mining inputs. Run
+`mining_fraction_sensitivity.py CONFIG.json` to reconstruct all saved
+polygon-cell fractions using planar rectangle clipping.
+`verify_mining_fraction_sf.R CONFIG.json` checks deterministic samples and
+the largest method differences against GEOS, and reads response values afresh.
+Then run `mining_polygon_association.R CONFIG.json` and both mining Python
+verifiers. The association continuation validates the archived extraction
+lineage and binds the reconstructed tables to their checksums. Preserve the
+source extraction, its earlier checks and the separate method comparison.
+Fresh full runs use `mining_polygon_support.R`; the continuation module is
+for the archived extraction lineage declared in the configuration.
