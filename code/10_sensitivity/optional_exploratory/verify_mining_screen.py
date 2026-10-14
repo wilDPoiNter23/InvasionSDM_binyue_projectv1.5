@@ -47,7 +47,10 @@ def main():
 
     if cfg.get("grid_metadata"):
         precise = json.loads(Path(cfg["grid_metadata"]).read_text())
-        previous = {v["path"]: v["sha256"] for v in receipt["inputs"]}
+        original_inputs = receipt["inputs"]
+        if isinstance(original_inputs, dict):
+            original_inputs = list(original_inputs.values())
+        previous = {v["path"]: v["sha256"] for v in original_inputs}
         check("precise metadata bound to the original raster inputs",
               all(previous.get(v["path"]) == v["sha256"] for v in precise["inputs"]))
         check("precise metadata preserves extent and dimensions",

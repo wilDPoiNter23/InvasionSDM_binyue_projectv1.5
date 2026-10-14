@@ -14,7 +14,7 @@ if(isTRUE(cfg$metadata_only)) {
   if(file.exists(target)) stop("Existing precise metadata retained")
   grid <- list(xmin=xmin(r),xmax=xmax(r),ymin=ymin(r),ymax=ymax(r),
     xres=res(r)[1],yres=res(r)[2],ncol=ncol(r),nrow=nrow(r),crs=crs(r))
-  write_json(list(grid=grid,inputs=lapply(unlist(cfg$responses),
+  write_json(list(grid=grid,inputs=lapply(unname(unlist(cfg$responses)),
     function(f)list(path=f,sha256=digest(file=f,algo="sha256"))),
     scope="Full-precision raster metadata only; calculated tables unchanged"),
     target,pretty=TRUE,auto_unbox=TRUE,digits=NA)
@@ -123,7 +123,7 @@ grid <- list(xmin=xmin(r),xmax=xmax(r),ymin=ymin(r),ymax=ymax(r),
 inputs <- c(cfg$mining_csv,unlist(cfg$responses))
 write_json(list(status="SCREEN_CALCULATED_PENDING_INDEPENDENT_CHECK",grid=grid,
   configuration_sha256=digest(file=args[1],algo="sha256"),
-  inputs=lapply(inputs,function(f)list(path=f,sha256=digest(file=f,algo="sha256"))),
+  inputs=lapply(unname(inputs),function(f)list(path=f,sha256=digest(file=f,algo="sha256"))),
   native_grid_changed=FALSE,exact_polygon_extraction=FALSE,
   shared_cell_duplicates_collapsed=TRUE,observed_invasion_response=FALSE,
   temporal_scope="Cumulative reclamation activity through 2022 versus static suitability",
