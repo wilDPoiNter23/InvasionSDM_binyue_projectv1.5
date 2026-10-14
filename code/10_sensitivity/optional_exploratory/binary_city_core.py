@@ -119,15 +119,15 @@ def build(root, paired_manifest, output_directory, expected_cities=108, expected
                 sum_species_suitable_area_km2=record['suitable'] if complete else '',
                 suitable_species_area_km2=record['suitable'] if complete else '',
                 sum_common_area_species_km2=record['common'] if complete else '',
-                status='COMPLETE_FIXED_K' if complete else 'INCOMPLETE_UNKNOWN_RESPONSE',
+                status='COMPLETE_FIXED_'+str(k) if complete else 'INCOMPLETE_UNKNOWN_RESPONSE',
                 core_roster_sha256=roster_hash))
     write(output / 'core_city_responses.csv', result)
     receipt = dict(status='COVERAGE_CORE_FROZEN',source_species_n=expected_species,core_species_n=k,
         excluded_species_n=expected_species-k,required_city_n=expected_cities,
         eligibility_rule='Positive finite common FULL/ENV area in every CITY polygon, identical across both threshold methods; no suitable outcome used for selection',
         core_roster_sha256=roster_hash,paired_manifest_sha256=hashlib.sha256(Path(paired_manifest).read_bytes()).hexdigest(),
-        source_tables=sources,response_rows=len(result),complete_city_rows=sum(r['region']=='CITY' and r['status']=='COMPLETE_FIXED_K' for r in result),
-        complete_reclamation_rows=sum(r['region']=='MAPPED_RECLAMATION' and r['status']=='COMPLETE_FIXED_K' for r in result),
+        source_tables=sources,response_rows=len(result),complete_city_rows=sum(r['region']=='CITY' and r['status']=='COMPLETE_FIXED_'+str(k) for r in result),
+        complete_reclamation_rows=sum(r['region']=='MAPPED_RECLAMATION' and r['status']=='COMPLETE_FIXED_'+str(k) for r in result),
         limitation='Changes the species estimand to a coverage subset. Missing reclamation support remains unknown. Summed species area is not unique habitat area; no causal inference or acceptance is established.')
     (output / 'core_receipt.json').write_text(json.dumps(receipt,indent=2),encoding='utf-8')
     return receipt
