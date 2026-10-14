@@ -13,7 +13,7 @@ stopifnot(digest(file=path,algo="sha256")==marker$support_sha256,
  all(s$weights$cell==s$cells[s$weights$cell_index]))
 for(i in seq_len(nrow(s$input_checksums)))stopifnot(digest(file=s$input_checksums$path[i],algo="sha256")==s$input_checksums$sha256[i])
 g<-s$grid;dx<-(g$xmax-g$xmin)/g$ncols;dy<-(g$ymax-g$ymin)/g$nrows
-sample<-unique(round(seq(1,nrow(s$weights),length.out=32)))
+sample<-unique(c(round(seq(1,nrow(s$weights),length.out=32)),s$precision_corrected_weight_rows))
 cities<-st_make_valid(st_transform(st_read(cfg$cities,quiet=TRUE),6933))
 cache<-new.env(parent=emptyenv());results<-list()
 e2<-.0066943799901413165;earth_a<-6378137;ecc<-sqrt(e2)

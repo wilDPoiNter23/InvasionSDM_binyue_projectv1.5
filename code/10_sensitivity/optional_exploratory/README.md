@@ -163,3 +163,17 @@ responses using the existing city predictor parameterisations. Area responses
 include city-area adjustment. These are index sensitivities: binary conversion
 does not remove human predictors already used to construct full-model outputs,
 and cannot independently establish a causal structural-equation model.
+
+`binary_city_prepare.R` caches native support once. Verify it with
+`verify_binary_city_support.R`; out-of-range fractions must remain unaccepted.
+For a bounded numerical precision discrepancy, use
+`binary_city_support_precision.R` to recompute affected fractions with GEOS
+into a fresh support directory, then verify that separate product.
+
+`paired_response_sem.R CONFIG.json` and `verify_paired_response_sem.R CONFIG.json`
+compare observed and threshold-defined responses in an adapted component
+system. Predictor-only PCs are reconstructed before any outcome analysis;
+historical response-supervised composite weights are excluded. City area is
+included in every component equation and all directed-path products are retained.
+City-bootstrap intervals describe exploratory associations. This is an alternative
+specification, rather than reproduction or causal validation of the original SEM.
