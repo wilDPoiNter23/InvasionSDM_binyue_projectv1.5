@@ -28,6 +28,14 @@ stopifnot(nrow(m)==6L,all(is.finite(co$estimate)),all(is.finite(co$se)),all(m$n[
  all(m$n[m$scope=="SYNTHETIC_OVERDISPERSED"]==107L),all(m$family[m$scope=="SYNTHETIC_OVERDISPERSED"]=="zero_truncated_negative_binomial"))
 support <- read.csv(file.path(out,"association_v2","model_support.csv"))
 stopifnot(all(support$status[support$scope=="SYNTHETIC_UNSUPPORTED"]=="INSUFFICIENT_SUPPORT"))
+diagnostics <- read.csv(file.path(out,"association_v2","optimizer_diagnostics.csv"))
+groups <- split(diagnostics,interaction(diagnostics$scope,diagnostics$window,diagnostics$model,diagnostics$family,drop=TRUE))
+for(q in groups){
+ selected <- q[q$selected,,drop=FALSE]
+ stopifnot(nrow(selected)==1L,selected$objective==min(q$objective,na.rm=TRUE),selected$convergence==0L,
+  selected$max_score<=.01,selected$min_curvature>1e-8,
+  nrow(q)==if(q$family[1]=="nb")5L else 1L)
+}
 # Independent ordinary Poisson comparison is close when truncation probability is tiny.
 fit <- glm(y~log1p(rec)+log1p(area),family=poisson())
 stopifnot(max(abs(co$estimate[co$model=="M0"&co$scope=="RAW_SELECTED_INVASIVE"]-coef(fit)))<.02)
@@ -43,5 +51,6 @@ for(case in c("normalization_collision","unmatched_spelling")){
  stopifnot(status!=0L,file.exists(file.path(child,"association_v2","city_identity_differences.csv")),!file.exists(file.path(child,"association_v2","models.csv")))
 }
 write_json(list(status="PASS_SYNTHETIC_COUNT_MODELS",models=nrow(m),poisson_high_mean_comparison=TRUE,
- case_whitespace_crosswalk=TRUE,normalization_collision_rejected=TRUE,unmatched_spelling_rejected=TRUE),file.path(out,"synthetic_association_verification.json"),pretty=TRUE,auto_unbox=TRUE)
+ case_whitespace_crosswalk=TRUE,normalization_collision_rejected=TRUE,unmatched_spelling_rejected=TRUE,
+ multistart_lowest_objective_and_unchanged_gates_verified=TRUE),file.path(out,"synthetic_association_verification.json"),pretty=TRUE,auto_unbox=TRUE)
 cat("PASS_SYNTHETIC_COUNT_MODELS",nrow(m),"\n")

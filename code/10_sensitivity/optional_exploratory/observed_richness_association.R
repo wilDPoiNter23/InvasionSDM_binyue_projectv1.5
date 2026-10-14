@@ -41,7 +41,8 @@ d$reclamation <- log1p(d$reclamation_area);d$area <- log1p(d$area_km2);d$intensi
 forms <- list(M0=richness~reclamation+area,M1=richness~reclamation+area+intensity)
 if(isTRUE(cfg$anthro_adjustment))forms$M2 <- richness~reclamation+area+intensity+anthro_pc1
 # Conditioning on positive observation support requires a zero-truncated likelihood.
-fit_count <- function(x,f,family){
+optimizer_diagnostics <- list()
+fit_count <- function(x,f,family,scope="",window="",model=""){
  X <- model.matrix(f,x);y <- x$richness;k <- ncol(X)
  initial <- glm.fit(X,y,family=poisson())$coefficients
  if(any(!is.finite(initial)))stop("Rank-deficient starting fit")
@@ -52,7 +53,6 @@ fit_count <- function(x,f,family){
   }
   -sum(lp-log1p(-pmin(p0,1-1e-14)))
  }
- start <- if(family=="poisson")initial else c(initial,log(10))
  score <- function(b){
   mu <- exp(drop(X%*%b[seq_len(k)]))
   if(family=="poisson")return(drop(crossprod(X,mu-y+mu/expm1(mu))))
@@ -62,8 +62,32 @@ fit_count <- function(x,f,family){
   dlogp0 <- theta*(-log1p(mu/theta)+mu/(theta+mu))
   c(beta,sum(-theta*lp_theta-p0/(1-p0)*dlogp0))
  }
- z <- optim(start,nll,gr=score,method="BFGS",hessian=TRUE,control=list(maxit=2000,reltol=1e-12))
- if(z$convergence!=0L||any(!is.finite(z$par))||max(abs(score(z$par)))>.01||min(eigen(z$hessian,symmetric=TRUE,only.values=TRUE)$values)<=1e-8)stop("Likelihood, score or curvature gate failed")
+ starts <- if(family=="poisson")list(initial)else lapply(c(.01,.1,1,10,100),function(t)c(initial,log(t)))
+ attempts <- lapply(starts,function(start)tryCatch({
+  q <- nlminb(start,nll,gradient=score,control=list(iter.max=4000,eval.max=8000,rel.tol=1e-13,x.tol=1e-12))
+  z <- optim(q$par,nll,gr=score,method="BFGS",hessian=TRUE,control=list(maxit=4000,reltol=1e-14))
+  list(z=z,nlminb_convergence=q$convergence)
+ },error=function(e)list(error=conditionMessage(e))))
+ diagnostics <- do.call(rbind,lapply(seq_along(attempts),function(i){
+  a <- attempts[[i]]
+  if(!is.null(a$error))return(data.frame(start=i,initial_theta=if(family=="nb")exp(starts[[i]][k+1L])else Inf,
+   nlminb_convergence=NA_integer_,convergence=NA_integer_,objective=NA_real_,max_score=NA_real_,min_curvature=NA_real_,theta=NA_real_,error=a$error))
+  z <- a$z
+  data.frame(start=i,initial_theta=if(family=="nb")exp(starts[[i]][k+1L])else Inf,
+   nlminb_convergence=a$nlminb_convergence,convergence=z$convergence,objective=z$value,
+   max_score=max(abs(score(z$par))),min_curvature=min(eigen(z$hessian,symmetric=TRUE,only.values=TRUE)$values),
+   theta=if(family=="nb")exp(z$par[k+1L])else Inf,error="")
+ }))
+ finite <- which(is.finite(diagnostics$objective))
+ selected <- if(length(finite))finite[which.min(diagnostics$objective[finite])]else NA_integer_
+ diagnostics$selected <- seq_len(nrow(diagnostics)) %in% selected
+ diagnostics$scope <- scope;diagnostics$window <- window;diagnostics$model <- model;diagnostics$family <- family
+ optimizer_diagnostics[[length(optimizer_diagnostics)+1L]] <<- diagnostics
+ if(is.na(selected))stop("No finite optimizer objective; see optimizer_diagnostics.csv")
+ z <- attempts[[selected]]$z;q <- diagnostics[selected,]
+ if(z$convergence!=0L||any(!is.finite(z$par))||q$max_score>.01||q$min_curvature<=1e-8)stop(sprintf(
+  "Likelihood gate: family=%s start=%d convergence=%d score=%.9g minimum_curvature=%.9g theta=%.9g objective=%.9g",
+  family,selected,z$convergence,q$max_score,q$min_curvature,q$theta,q$objective))
  se <- sqrt(diag(solve(z$hessian)))[seq_len(k)]
  mu <- exp(drop(X%*%z$par[seq_len(k)]));theta <- if(family=="poisson")Inf else exp(z$par[k+1L])
  p0 <- if(family=="poisson")exp(-mu)else exp(dnbinom(0,mu=mu,size=theta,log=TRUE))
@@ -84,8 +108,8 @@ for(s in unique(d$scope))for(w in unique(d$window)){
   state <- "ELIGIBLE";reason <- ""
   if(nrow(x)<max(as.integer(cfg$minimum_model_cities),10L*k)||length(unique(x$richness))<3L||sd(x$reclamation)==0||sd(x$area)==0){state <- "INSUFFICIENT_SUPPORT";reason <- "Minimum cities, count variation or predictor variation gate"}
   if(state=="ELIGIBLE"){
-   fit <- tryCatch({a <- fit_count(x,forms[[m]],"poisson");family <- "zero_truncated_poisson";poisson_disp <- a$dispersion
-    if(poisson_disp>1.5){a <- fit_count(x,forms[[m]],"nb");family <- "zero_truncated_negative_binomial"};list(a=a,family=family,poisson_disp=poisson_disp)},error=function(e)e)
+   fit <- tryCatch({a <- fit_count(x,forms[[m]],"poisson",s,w,m);family <- "zero_truncated_poisson";poisson_disp <- a$dispersion
+    if(poisson_disp>1.5){a <- fit_count(x,forms[[m]],"nb",s,w,m);family <- "zero_truncated_negative_binomial"};list(a=a,family=family,poisson_disp=poisson_disp)},error=function(e)e)
    if(inherits(fit,"error")){state <- "FIT_GATE_FAILED";reason <- conditionMessage(fit)}else{
     a <- fit$a;co <- a$coefficients;co$scope <- s;co$window <- w;co$model <- m;coef[[length(coef)+1L]] <- co
     models[[length(models)+1L]] <- data.frame(scope=s,window=w,model=m,n=nrow(x),family=fit$family,poisson_dispersion=fit$poisson_disp,dispersion=a$dispersion,theta=a$theta,aic=a$aic)
@@ -96,12 +120,14 @@ for(s in unique(d$scope))for(w in unique(d$window)){
  }
 }
 write.csv(do.call(rbind,support),file.path(dest,"model_support.csv"),row.names=FALSE)
+if(length(optimizer_diagnostics))write.csv(do.call(rbind,optimizer_diagnostics),file.path(dest,"optimizer_diagnostics.csv"),row.names=FALSE)
 if(length(models))write.csv(do.call(rbind,models),file.path(dest,"models.csv"),row.names=FALSE)
 if(length(coef))write.csv(do.call(rbind,coef),file.path(dest,"coefficients.csv"),row.names=FALSE)
 if(length(residuals))write.csv(do.call(rbind,residuals),file.path(dest,"residuals.csv"),row.names=FALSE)
 write.csv(d,file.path(dest,"city_analysis_data.csv"),row.names=FALSE,na="")
 write_json(list(status="EXPLORATORY_CONDITIONAL_ASSOCIATION",primary_window="common2010_2024",primary_scope="RAW_SELECTED_INVASIVE",
  formulas=lapply(forms,function(f)paste(deparse(f),collapse=" ")),negative_binomial_trigger="Positive-count Poisson Pearson dispersion > 1.5",
+ optimization="Poisson start or five NB size starts (0.01,0.1,1,10,100), nlminb then BFGS; lowest finite objective selected with unchanged score/curvature gates",
  predictor_sha256=digest(file=cfg$city_predictors,algo="sha256"),predictor_rows=nrow(p),predictor_columns=ncol(p)-3L,complete_pc_cities=pc_complete,
  city_identity="One-to-one ASCII lowercase and outer-whitespace exact keys; geometry display names preserved",
  crosswalk_sha256=digest(file=file.path(dest,"city_identity_crosswalk.csv"),algo="sha256"),
