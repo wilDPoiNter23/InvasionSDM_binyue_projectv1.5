@@ -177,3 +177,11 @@ historical response-supervised composite weights are excluded. City area is
 included in every component equation and all directed-path products are retained.
 City-bootstrap intervals describe exploratory associations. This is an alternative
 specification, rather than reproduction or causal validation of the original SEM.
+
+`binary_city_core.py ROOT PAIRED_MANIFEST FRESH_OUTPUT` offers a separately
+declared coverage sensitivity when the complete source roster lacks common
+predictions across cities. It freezes species with positive paired finite
+coverage in every city before reading suitability outcomes. Missing reclaimed
+land responses remain unknown. Declare `expected_species_count` consistently
+in subsequent city-association and component-system configurations. A smaller
+core changes the taxonomic estimand and does not replace the full-roster result.
