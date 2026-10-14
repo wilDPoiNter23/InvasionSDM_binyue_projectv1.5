@@ -140,3 +140,26 @@ associations require declared minimum support and matched native responses.
 Outputs concern recorded richness, rather than arrival times or true absence.
 Land use is not adjusted in this module. The verifier recounts memberships and
 compares fitted age slopes against a separate city-indicator parameterisation.
+
+## Threshold-defined suitable area
+
+`binary_prepare.py` separates historical main candidates and accepted paired
+sources. `binary_calibration_extract.R` obtains scores directly from each stored
+continuous product at retained presence and pseudoabsence coordinates. The
+10th-percentile presence cutoff and maximum-TSS cutoff are calibration
+sensitivities; they are not independent held-out validation. Never average
+member thresholds or threshold an across-species mean map.
+
+`binary_convert.R` creates native-grid 0/1 maps while preserving missing cells;
+`binary_verify_thresholds.py` and `binary_verify_rasters.R` check cutoffs and maps.
+`binary_city_extract.R` freezes common FULL/ENV finite cells per paired species
+and calculates native-cell area-weighted responses. `binary_city_summarize.py`
+requires the declared 684-species denominator. Sum of species suitable areas
+is not the unique area suitable for at least one species.
+
+`binary_city_association.R CONFIG.json` and
+`verify_binary_city_association.R CONFIG.json` compare matched threshold
+responses using the existing city predictor parameterisations. Area responses
+include city-area adjustment. These are index sensitivities: binary conversion
+does not remove human predictors already used to construct full-model outputs,
+and cannot independently establish a causal structural-equation model.

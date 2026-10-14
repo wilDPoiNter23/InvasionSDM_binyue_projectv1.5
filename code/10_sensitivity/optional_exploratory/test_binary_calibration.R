@@ -1,0 +1,18 @@
+# Synthetic threshold and on-disk conversion checks.
+args <- commandArgs(TRUE)
+source(file.path(args[1],"binary_calibration_extract.R"))
+source(file.path(args[1],"binary_convert.R"))
+mt <- binary_maximum_tss(c(0,100,800,900),c(0,0,1,1))
+stopifnot(mt$cutoff==800,mt$tss==1)
+mt <- binary_maximum_tss(c(0,500,500,1000),c(0,1,0,1))
+stopifnot(mt$cutoff==500,mt$tss==.5)
+td <- tempfile("binary_fixture_");dir.create(td)
+r <- rast(nrows=2,ncols=3,xmin=0,xmax=3,ymin=0,ymax=2,crs="EPSG:4326")
+values(r) <- c(NA,0,499,500,501,1000)
+input <- file.path(td,"continuous.tif");writeRaster(r,input)
+z <- binary_convert_one(input,500,file.path(td,"binary.tif"))
+v <- values(rast(z$output_path))[,1]
+stopifnot(is.na(v[1]),identical(as.numeric(v[-1]),c(0,0,1,1,1)),z$occupied_cells==3,z$finite_cells==5)
+z0 <- binary_convert_one(input,0,file.path(td,"binary_zero.tif"))
+stopifnot(z0$occupied_cells==5,z0$finite_cells==5)
+cat("Binary calibration and conversion tests passed\n")
