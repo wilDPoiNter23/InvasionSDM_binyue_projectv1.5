@@ -20,7 +20,10 @@ for(p in paths) {
   w <- e$fraction
   s <- z$summary[i,]
   support_ok <- support_ok && s$native_cells==length(unique(e$cell)) && abs(s$covered_cell_equivalents-sum(w))<1e-8
-  for(n in names(cfg$responses)) means_ok <- means_ok && isTRUE(all.equal(s[[n]],sum(w*e[[n]])/sum(w),tolerance=1e-10))
+  for(n in names(cfg$responses)) {
+    expected <- if(sum(w)>0)sum(w*e[[n]])/sum(w) else NA_real_
+    means_ok <- means_ok && isTRUE(all.equal(s[[n]],expected,tolerance=1e-10))
+  }
  }
 }
 check("Checkpoint native means reconstructed",means_ok)
@@ -30,7 +33,7 @@ d <- read.csv(file.path(cfg$joint_output,"joint_native_summary.csv"),check.names
 results <- read.csv(file.path(out,"within_city_use_cohort_association.csv"))
 point_ok <- TRUE
 for(i in seq_len(nrow(results))) {
- t <- results[i,]; q <- d
+ t <- results[i,]; q <- d[Reduce(`&`,lapply(names(cfg$responses),function(n)is.finite(d[[n]]))),,drop=FALSE]
  if(t$scope=="native_support")q <- q[q$native_cells>=3 & q$effective_cells>=2,]
  q$x <- (q$period_endpoint-1990)/5
  q$w <- q$area_km2/ave(q$area_km2,q$city_id,FUN=sum)

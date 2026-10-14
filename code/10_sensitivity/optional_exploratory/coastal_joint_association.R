@@ -14,6 +14,10 @@ source <- file.path(cfg$joint_output,"joint_native_summary.csv")
 d <- read.csv(source,stringsAsFactors=FALSE,check.names=FALSE)
 city <- read.csv(file.path(cfg$joint_output,"joint_city_summary.csv"),stringsAsFactors=FALSE,check.names=FALSE)
 stopifnot(!anyDuplicated(paste(d$city_id,d$period_endpoint,d$landuse)),all(d$area_km2>0))
+paired_finite <- Reduce(`&`,lapply(names(cfg$responses),function(n)is.finite(d[[n]])))
+unsupported <- d[!paired_finite,,drop=FALSE]
+unsupported$reason <- rep("NO_PAIRED_FINITE_NATIVE_RESPONSE",nrow(unsupported))
+write.csv(unsupported,file.path(out,"category_response_exclusions.csv"),row.names=FALSE)
 set.seed(cfg$seed)
 interval <- function(x) {
   x <- x[is.finite(x)]
@@ -22,7 +26,7 @@ interval <- function(x) {
 }
 slopes <- list(); slope_terms <- list(); contrasts <- list(); contrast_gates <- list(); contrast_terms <- list()
 for(scope in c("all_mapped","native_support")) {
-  q <- d
+  q <- d[paired_finite,,drop=FALSE]
   if(scope=="native_support")q <- q[q$native_cells>=3 & q$effective_cells>=2,]
   q$x <- (q$period_endpoint-1990)/5
   q$w <- q$area_km2/ave(q$area_km2,q$city_id,FUN=sum)
