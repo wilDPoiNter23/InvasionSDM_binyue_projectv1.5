@@ -30,6 +30,15 @@ Coastal polygons can share a native suitability cell. Static suitability is not
 longitudinal invasion, and these comparisons do not identify colonisation lag.
 Land-use categories are descriptive unless jointly controlled in a declared model.
 
+The original spatial screen must retain its category-overlap checks. When those
+checks fail, a separate cohort analysis may set `strict_geometry` to true and
+use a new output directory. This excludes complete cities whose change-year
+category excess exceeds the larger of 0.001 square kilometres and 0.1% of mapped
+area. The excluded-city table remains part of that analysis. No year is assigned
+arbitrarily to overlapping land. `verify_coastal_period.py --cohort-only` checks
+this filtered cohort scope; it does not clear the original spatial package or
+the land-use classifications. Preserve the original failed verification.
+
 Mining land reclamation denotes post-mining land recovery. It is a separate
 disturbance process and must not be used as coastal land-creation timing.
 

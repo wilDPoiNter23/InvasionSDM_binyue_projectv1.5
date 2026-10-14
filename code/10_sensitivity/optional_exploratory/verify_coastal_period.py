@@ -27,6 +27,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("configuration", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--cohort-only", action="store_true",
+                        help="Verify the declared geometry-filtered cohort analysis, retaining original package failures")
     args = parser.parse_args()
     cfg = json.loads(args.configuration.read_text(encoding="utf-8-sig"))
     screen = Path(cfg["screen_output"])
@@ -37,12 +39,26 @@ def main():
         checks.append(dict(check=name, passed=bool(passed), details=details))
 
     coverage = rows(screen / "city_coverage.csv")
+    excluded = set()
+    if cfg.get("strict_geometry"):
+        excluded = {r["city_id"] for r in coverage if r["layer"] == "coastal_change" and
+                    number(r["overlap_excess_km2"]) > max(.001, .001 * number(r["mapped_area_km2"]))}
+        registered = {r["city_id"] for r in rows(output / "geometry_exclusions.csv")}
+        check("declared_geometry_exclusions", registered == excluded, sorted(excluded))
+    if args.cohort_only and not cfg.get("strict_geometry"):
+        raise ValueError("Cohort-only verification requires the declared strict geometry filter")
     for layer in {r["layer"] for r in coverage}:
+        if args.cohort_only and layer != "coastal_change":
+            continue
         q = [r for r in coverage if r["layer"] == layer]
         check(layer + "_108_unique_cities", len(q) == len({r["city_id"] for r in q}) == 108)
+        if args.cohort_only:
+            q = [r for r in q if r["city_id"] not in excluded]
         check(layer + "_disjoint_categories", all(number(r["overlap_excess_km2"]) <=
               max(0.001, number(r["mapped_area_km2"]) * 0.001) for r in q))
     data = rows(screen / "native_cell_category_suitability.csv")
+    if args.cohort_only:
+        data = [r for r in data if r["layer"] == "coastal_change" and r["city_id"] not in excluded]
     identifiers = [(r["layer"], r["response"], r["city_id"], r["reported_category"]) for r in data]
     check("unique_city_category_response", len(identifiers) == len(set(identifiers)))
     check("native_cell_support_bounds", all(
@@ -56,6 +72,7 @@ def main():
         response, scope = summary["response"], summary["scope"]
         selected = [r for r in data if r["layer"] == "coastal_change" and
                     r["response"] == response and math.isfinite(number(r["mean_suitability"]))]
+        selected = [r for r in selected if r["city_id"] not in excluded]
         if scope == "native_support":
             selected = [r for r in selected if number(r["effective_cells"]) >= 2 and
                         number(r["native_cells"]) >= 3]
@@ -89,11 +106,15 @@ def main():
         delta = sum(differences) / len(differences) if differences else math.nan
         check(label + "_paired_count", len(differences) == int(pair["n_cities"]))
         check(label + "_paired_difference", close(delta, number(pair["recent_minus_old"])))
-    result = dict(status="PASS" if all(r["passed"] for r in checks) else "FAIL", checks=checks,
-                  scope="Saved-table consistency and point-estimate reconstruction; not causal validation")
+    success = all(r["passed"] for r in checks)
+    status = "PASS_COHORT_SCOPE" if success and args.cohort_only else "PASS" if success else "FAIL"
+    scope = ("Geometry-filtered cohort only; original full spatial-package failures retained; "
+             "point-estimate reconstruction, not causal validation") if args.cohort_only else (
+             "Saved-table consistency and point-estimate reconstruction; not causal validation")
+    result = dict(status=status, checks=checks, scope=scope)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
-    return 0 if result["status"] == "PASS" else 1
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

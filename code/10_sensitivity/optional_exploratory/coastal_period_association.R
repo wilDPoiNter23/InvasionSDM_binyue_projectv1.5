@@ -11,6 +11,15 @@ if(file.exists(file.path(out,"association_complete.json"))) stop("Existing assoc
 source <- file.path(cfg$screen_output,"native_cell_category_suitability.csv")
 d <- read.csv(source)
 d <- d[d$layer=="coastal_change" & is.finite(d$mean_suitability),]
+excluded <- character()
+if(isTRUE(cfg$strict_geometry)) {
+  coverage <- read.csv(file.path(cfg$screen_output,"city_coverage.csv"))
+  coverage <- coverage[coverage$layer=="coastal_change",]
+  bad <- coverage$overlap_excess_km2 > pmax(.001,.001*coverage$mapped_area_km2)
+  excluded <- coverage$city_id[bad]
+  write.csv(coverage[bad,],file.path(out,"geometry_exclusions.csv"),row.names=FALSE)
+  d <- d[!d$city_id %in% excluded,]
+}
 d$period_endpoint <- as.numeric(d$reported_category)
 stopifnot(all(d$period_endpoint %in% seq(1990,2020,5)))
 results <- list(); city_terms <- list(); pair_results <- list(); pairs <- list()
@@ -60,6 +69,7 @@ if(length(city_terms))write.csv(do.call(rbind,city_terms),file.path(out,"within_
 if(length(pairs))write.csv(do.call(rbind,pairs),file.path(out,"old_recent_city_source.csv"),row.names=FALSE)
 writeLines(capture.output(sessionInfo()),file.path(out,"sessionInfo.txt"))
 write_json(list(status="COHORT_ASSOCIATIONS_ONLY",source_sha256=digest(file=source,algo="sha256"),
+  strict_geometry=isTRUE(cfg$strict_geometry),excluded_geometry_cities=excluded,
   precise_completion_dates=FALSE,longitudinal_invasion_response=FALSE,
   caveat="Static modelled suitability; five-year source cohorts; land-use confounding and shared native cells remain"),
   file.path(out,"association_complete.json"),pretty=TRUE,auto_unbox=TRUE)
