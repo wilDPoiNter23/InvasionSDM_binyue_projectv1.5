@@ -284,3 +284,23 @@ arrival. Adjacent later exposure cohorts share a calendar boundary with outcome
 windows because dates are five-year intervals; their lead term is a forward-bin
 check, not an exact event-time negative control. Neither model refits SDMs or
 recalibrates the original index.
+
+Optional `exclude_city_keys` settings retain the original inputs while excluding
+declared source keys from new surface, binary and temporal summaries. The
+archived108/84-city numerical reproduction is not overwritten.
+
+`../gam_robustness/city_exclusion_sensitivity.R CONFIG.json` refits the supplied
+four formulas on the declared reduced city sample. Its common-absolute-IQR
+profiles compare the same absolute change across parameterisations at each city
+size, using local20-city area neighbours. This is not a geometry-preserving
+null calibration or a fitted ecological breakpoint.
+
+`../sampling_selection/original_pool_inventory.R CONFIG.json` inventories source
+records, exact/candidate links, numeric-data availability and continent counts.
+Matching coordinates and reclamation values can support source-record links,
+but do not establish equivalent administrative polygons. Missing excluded-city
+covariates and qualitative reclamation amounts are not replaced with zeros.
+
+`../../09_figures/render_land_reference.R CONFIG.json` presents the original
+index on one outside-city reference. Re-expression alone is algebraic; empirical
+robustness comes from the declared matched sample, zones and extraction rules.

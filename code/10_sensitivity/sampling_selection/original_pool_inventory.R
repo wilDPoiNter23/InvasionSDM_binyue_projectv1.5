@@ -10,6 +10,13 @@ current$source_key<-normalise(current$city);pool$key<-normalise(pool$city)
 aliases<-cfg$aliases;link<-current$source_key
 for(name in names(aliases))link[link==name]<-aliases[[name]]
 current$candidate_source_key<-link;current$source_match<-link%in%pool$key
+i<-match(link,pool$key)
+current$linked_source_reclamation<-pool$reclamation_numeric[i]
+number<-function(x)suppressWarnings(as.numeric(gsub('[^0-9.-]','',as.character(x))))
+current$linked_source_latitude<-number(pool$latitude_raw[i]);current$linked_source_longitude<-number(pool$longitude_raw[i])
+current$reclamation_value_agrees<-is.finite(current$linked_source_reclamation)&abs(current$reclamation_area-current$linked_source_reclamation)<1e-6
+current$coordinate_agrees<-is.finite(current$linked_source_latitude)&is.finite(current$linked_source_longitude)&
+ abs(current$Latitude-current$linked_source_latitude)<.001&abs(current$Longitude-current$linked_source_longitude)<.001
 current$link_type<-ifelse(current$source_key%in%pool$key,'EXACT_NORMALISED',ifelse(current$source_match,'CANDIDATE_ALIAS','OUTSIDE_SOURCE_POOL'))
 active<-current[!current$author_excluded,]
 pool$retained_exact<-pool$key%in%active$source_key
