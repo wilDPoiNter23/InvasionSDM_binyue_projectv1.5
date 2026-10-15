@@ -185,3 +185,19 @@ coverage in every city before reading suitability outcomes. Missing reclaimed
 land responses remain unknown. Declare `expected_species_count` consistently
 in subsequent city-association and component-system configurations. A smaller
 core changes the taxonomic estimand and does not replace the full-roster result.
+
+`shap_pilot.R CONFIG.json` explains stored continuous predictions on a frozen
+sample of current city cells. It first checks the saved prediction route against
+the raster, then estimates permutation Shapley contributions using a declared
+empirical background. Model fitting is excluded. Contributions describe the
+specified fitted model and reference distribution.
+
+`residual_city_models.R CONFIG.json` and its verifier compare fresh area/record
+residual responses, partial-regression components, and verified continent groups.
+Correction baselines exclude reclamation. Earlier count-model residuals already
+include reclamation and are retained as diagnostic provenance only.
+
+`temporal_record_lag_summary.py CONFIG.json` summarises interval-valued recording
+delays from stored species/cohort first records, including city-balanced and
+observation-opportunity summaries. These are recorded delays rather than
+colonisation times; unrecorded cohorts remain unknown.
