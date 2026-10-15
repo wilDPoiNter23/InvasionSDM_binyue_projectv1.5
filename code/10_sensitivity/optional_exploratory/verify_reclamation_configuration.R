@@ -1,6 +1,32 @@
 #!/usr/bin/env Rscript
 # Reconstruct mapped component metrics, geometry conservation and partial associations.
 suppressPackageStartupMessages({library(sf);library(jsonlite);library(digest)})
+check_component_geometry <- function(p){
+ stopifnot(st_crs(p)$epsg==6933L,all(st_is_valid(p)))
+ g<-st_geometry(p);areas<-as.numeric(st_area(g))/10000;union_geometry<-st_union(g)
+ stopifnot(all(st_is_valid(union_geometry)),max(abs(areas-p$area_ha))<1e-8)
+ union_ha<-sum(as.numeric(st_area(union_geometry)))/10000
+ global_error<-abs(sum(p$area_ha)-union_ha)
+ # Match the production relative-area gate on global projected coordinates.
+ global_tolerance<-max(1e-8,1e-8*union_ha)
+ if(global_error>global_tolerance)stop("Material global component-union area discrepancy")
+ # Interior-interior dimension 2 catches partial overlaps, containment and duplicates.
+ relation<-st_relate(g,pattern="2********")
+ overlap_pairs<-sum(vapply(seq_along(relation),function(i)sum(relation[[i]]>i),integer(1)))
+ if(overlap_pairs>0L)stop("Component interiors overlap in two dimensions")
+ # Translation is numerical preconditioning only; saved geometry and metrics are unchanged.
+ bb<-st_bbox(g);anchor<-c(mean(bb[c("xmin","xmax")]),mean(bb[c("ymin","ymax")]))
+ local<-g-anchor;local_areas<-as.numeric(st_area(local))/10000
+ local_union_ha<-sum(as.numeric(st_area(st_union(local))))/10000
+ local_error<-abs(sum(local_areas)-local_union_ha)
+ if(local_error>=1e-8)stop("Local-origin component-union area discrepancy exceeds original absolute gate")
+ threshold_changes<-sum(outer(p$area_ha,c(1,10,100),">=")!=outer(local_areas,c(1,10,100),">="))
+ if(threshold_changes>0L)stop("Component threshold classification changes under numerical translation")
+ data.frame(city_id=p$city_id[1],components=nrow(p),global_union_error_ha=global_error,
+  global_relative_error=global_error/union_ha,global_tolerance_ha=global_tolerance,
+  local_union_error_ha=local_error,overlap_pairs=overlap_pairs,threshold_class_changes=threshold_changes,
+  maximum_local_component_area_change_ha=max(abs(local_areas-p$area_ha)))
+}
 cfg<-fromJSON(commandArgs(TRUE)[1],simplifyVector=TRUE);out<-cfg$output_root
 if(file.exists(file.path(out,"verification.json")))stop("Existing configuration verification retained")
 sf_use_s2(FALSE)
@@ -22,18 +48,21 @@ for(i in seq_len(nrow(r))){
   abs(q$effective_patch_number-1/sum((retained/A)^2))<1e-9,q$effective_patch_number>=1-1e-10,q$effective_patch_number<=q$n_retained+1e-8)else
   stopifnot(is.na(q$largest_patch_fraction),is.na(q$effective_patch_number),q$support=="NO_COMPONENT_ABOVE_ANALYST_CUTOFF")
 }
+geometry_checks<-list()
 for(city in unique(r$city_id)){
  a<-r[r$city_id==city,];a<-a[order(a$cutoff_ha),];stopifnot(all(diff(a$n_retained)<=0),all(diff(a$retained_area_ha)<=0))
  i<-match(city,cities$city_id);p<-readRDS(file.path(out,"components",sprintf("city_%03d.rds",i)))
- stopifnot(st_crs(p)$epsg==6933L,all(st_is_valid(p)),max(abs(as.numeric(st_area(p))/10000-p$area_ha))<1e-8,
-  abs(sum(p$area_ha)-sum(as.numeric(st_area(st_union(p))))/10000)<1e-8)
+ geometry_checks[[city]]<-check_component_geometry(p)
 }
+write.csv(do.call(rbind,geometry_checks),file.path(out,"component_geometry_qc.csv"),row.names=FALSE)
 # Rebuild source unions for a deterministic subset, independent of saved component areas.
 selected<-if(nrow(source))unique(round(seq(1,nrow(source),length.out=min(16,nrow(source)))))else integer()
 for(j in selected){
  s<-source[j,];stopifnot(digest(file=s$file,algo="sha256")==s$sha256)
  z<-readRDS(s$file);i<-match(s$city_id,cities$city_id)
  q<-suppressWarnings(st_intersection(st_union(st_geometry(st_transform(st_make_valid(z),6933))),st_geometry(cities[i,])))
+ q<-suppressWarnings(st_collection_extract(st_make_valid(q),"POLYGON"))
+ stopifnot(length(q)>0L,!all(st_is_empty(q)))
  expected<-sum(as.numeric(st_area(q)))/10000;actual<-sum(parts$area_ha[parts$city_id==s$city_id])
  stopifnot(abs(expected-actual)<=max(1e-8,1e-8*expected))
 }
@@ -64,6 +93,6 @@ if(file.exists(file.path(out,"associations.csv"))){
 }
 write_json(list(status="PASS_MAPPED_CONFIGURATION_NUMERICAL_QA",configuration_rows=nrow(r),eligible_cities=length(unique(r$city_id)),
  source_geometry_checks=length(selected),association_models_checked=association_n,
- verified=c("Whole-city coverage exclusions","Threshold counts and area fractions","Effective number and largest component fraction","Saved geometry validity and union area","Source geometry reconstruction subset","FWL and QR HC3 associations when fitted"),
+ verified=c("Whole-city coverage exclusions","Threshold counts and area fractions","Effective number and largest component fraction","Global relative and local-origin absolute union area checks","Zero two-dimensional component overlap","Unchanged threshold classes under coordinate translation","Source geometry reconstruction subset","FWL and QR HC3 associations when fitted"),
  habitat_fragmentation_or_causal_acceptance=FALSE),file.path(out,"verification.json"),auto_unbox=TRUE,pretty=TRUE)
 cat("PASS_MAPPED_CONFIGURATION_NUMERICAL_QA\n")

@@ -71,6 +71,7 @@ period_panel <- function(m) {
  ggplot(long,aes(x,value,group=city))+geom_line(colour='grey75',linewidth=.25,alpha=.7)+
  geom_point(colour=cols[m],size=.7,alpha=.65)+geom_line(data=mu,aes(group=1),linewidth=.85,colour='black')+
  geom_point(data=mu,aes(group=1),size=1.5,colour='black')+scale_x_continuous(breaks=1:2,labels=c('Earlier\n1985-2000','Recent\n2010-2020'))+
+ coord_cartesian(ylim=range(c(q$old_mean,q$recent_mean)))+
  labs(x=NULL,y='Current predicted suitability',title=paste0(m,': paired cities (n = 51)'))
 }
 pc$label<-paste(pc$model,ifelse(pc$scope=='native_support','native support (51)','all mapped (76)'))
@@ -145,7 +146,7 @@ for(m in c('M0','M1')) {
  labs(x='Coefficient (recorded species per log-area unit)',y=NULL,title='Component-model effects and 95% intervals')
  save_figure(tagged(pscatter+peffects+plot_layout(widths=c(1.15,1))),paste0('observed_richness_',m),86)
 }
-captions<-c(captions,'Observed richness. M0 first adjusts raw recorded invasive-plant richness for log(1 + city area); M1 additionally adjusts for log(1 + target-record count). The scatter displays the partial association in the richness component equation after accounting for socioeconomic, climate and soil scores and city area (plus record intensity in M1). Points are 84 cities; the line is the fitted partial coefficient. Effect bars are 95% percentile intervals from 1,999 city bootstrap draws, with first-stage residual adjustment refitted in each draw. All direct, combined indirect and total effects are shown; no paths were removed by significance. Coefficients are unstandardized associations, not identified causal effects. M1 is a required companion sensitivity because target-record intensity changes the inference; target-record count is itself an endogenous proxy for observation intensity. Source tables: residual_effects.csv, residual_edges.csv and residual_data_M0/M1.csv.')
+captions<-c(captions,'Observed richness. The response uses target invasive-plant records from the common 2010-2024 window. M0 first adjusts raw recorded richness for log(1 + city area); M1 additionally adjusts for log(1 + target-record count). The scatter displays the partial association in the richness component equation after accounting for socioeconomic, climate and soil scores and city area (plus record intensity in M1). Points are 84 cities; the line is the fitted partial coefficient. Effect bars are 95% percentile intervals from 1,999 city bootstrap draws, with first-stage residual adjustment refitted in each draw. All direct, combined indirect and total effects are shown; no paths were removed by significance. Coefficients are unstandardized associations, not identified causal effects. M1 is a required companion sensitivity because target-record intensity changes the inference; target-record count is itself an endogenous proxy for observation intensity. Source tables: residual_effects.csv, residual_edges.csv and residual_data_M0/M1.csv.')
 
 writeLines(captions,file.path(out,'figure_captions.txt'))
 writeLines(capture.output(sessionInfo()),file.path(out,'sessionInfo.txt'))

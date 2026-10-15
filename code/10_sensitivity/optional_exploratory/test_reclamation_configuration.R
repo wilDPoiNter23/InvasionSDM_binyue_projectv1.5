@@ -4,6 +4,17 @@ suppressPackageStartupMessages({library(sf);library(jsonlite)})
 args<-commandArgs(TRUE);source(args[1]);out<-args[2]
 dir.create(out,recursive=TRUE);if(file.exists(file.path(out,"config.json")))stop("Existing fixture retained")
 box<-function(x,y,w,h)st_polygon(list(matrix(c(x,y,x+w,y,x+w,y+h,x,y+h,x,y),ncol=2,byrow=TRUE)))
+verification_source<-file.path(dirname(args[1]),"verify_reclamation_configuration.R")
+expressions<-parse(verification_source)
+helper<-vapply(expressions,function(x)is.call(x)&&identical(x[[1]],as.name("<-"))&&identical(x[[2]],as.name("check_component_geometry")),logical(1))
+if(!any(helper))stop("Missing component geometry verifier helper")
+eval(expressions[[which(helper)]])
+large<-st_sf(city_id="Large coordinate fixture",component=1:2,geometry=st_sfc(box(13000000,4000000,1111.1,777.7),box(13002000,4000000,255.5,333.3),crs=6933))
+large$area_ha<-as.numeric(st_area(large))/10000
+precision<-check_component_geometry(large)
+stopifnot(precision$overlap_pairs==0L,precision$threshold_class_changes==0L,precision$local_union_error_ha<1e-8)
+overlap<-large;st_geometry(overlap)[2]<-st_geometry(overlap)[1];overlap$area_ha<-as.numeric(st_area(overlap))/10000
+stopifnot(inherits(tryCatch(check_component_geometry(overlap),error=function(e)e),"error"))
 city<-st_sf(shapeName=c("City A","City B","City C"),geometry=st_sfc(box(0,0,4000,1000),box(5000,0,100,100),box(6000,0,100,100),crs=6933))
 st_write(city,file.path(out,"cities.gpkg"),quiet=TRUE)
 dir.create(file.path(out,"cohorts"))

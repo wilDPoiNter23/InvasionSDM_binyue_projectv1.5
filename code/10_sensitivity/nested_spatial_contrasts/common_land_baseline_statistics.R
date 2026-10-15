@@ -10,7 +10,9 @@ if(anyDuplicated(paste(d$city_id,d$zone,d$support_policy,d$group)))stop("Duplica
 zones<-c("OUTSIDE_RING","NON_RECLAIMED_CITY","RECLAIMED_CITY")
 sources<-list();effects<-list();support<-list();group_differences<-list()
 set.seed(cfg$seed);B<-as.integer(cfg$bootstrap_replicates)
-for(policy in c("STRICT_684","PAIRED_AVAILABLE"))for(minimum in c(1,5)) {
+policies<-if(is.null(cfg$support_policies))c("STRICT_684","PAIRED_AVAILABLE")else cfg$support_policies
+stopifnot(length(policies)>0L,all(policies%in%c("STRICT_684","PAIRED_AVAILABLE","FIXED_261")))
+for(policy in policies)for(minimum in c(1,5)) {
   x<-d[d$support_policy==policy,];ids<-sort(unique(x$city_id));keep<-character()
   for(city in ids) {
     z<-x[x$city_id==city,]
@@ -30,10 +32,15 @@ for(policy in c("STRICT_684","PAIRED_AVAILABLE"))for(minimum in c(1,5)) {
     values<-matrix(NA_real_,nrow=n,ncol=length(zones))
     for(j in seq_along(zones)){q<-x[x$zone==zones[j]&x$group==group,];values[,j]<-q$mean_suitability[match(keep,q$city_id)]}
     colnames(values)<-zones
+    if(isTRUE(cfg$include_city_overall)) {
+      urban_area<-sapply(zones[2:3],function(zone){q<-x[x$zone==zone&x$group==group,];q$common_area_km2[match(keep,q$city_id)]})
+      values<-cbind(values,CITY_TOTAL=rowSums(values[,2:3,drop=FALSE]*urban_area)/rowSums(urban_area))
+    }
     indices<-100*values/values[,"OUTSIDE_RING"]
     for(j in seq_along(zones))sources[[length(sources)+1L]]<-data.frame(city_id=keep,group=group,zone=zones[j],support_policy=policy,
       minimum_cell_equivalents=minimum,mean_suitability=values[,j],ring_100_index=indices[,j],n_matched_cities=n)
     contrast<-list(NON_RECLAIMED_MINUS_RING=c(2,1),RECLAIMED_MINUS_RING=c(3,1),RECLAIMED_MINUS_NON_RECLAIMED=c(3,2))
+    if(isTRUE(cfg$include_city_overall))contrast$CITY_MINUS_RING<-c(4,1)
     delta_by_group[[group]]<-list()
     for(name in names(contrast)) {
       ab<-contrast[[name]];difference<-values[,ab[1]]-values[,ab[2]];index_difference<-indices[,ab[1]]-indices[,ab[2]]

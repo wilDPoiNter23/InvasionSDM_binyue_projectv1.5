@@ -216,3 +216,24 @@ configuration with external input roots and an external output root. Figure
 bundles include editable vector exports, raster previews, source tables and
 captions. No species models are trained by these modules.
 
+`reclamation_configuration.R` describes connected mapped reclamation components
+after dissolving period boundaries. Its 1, 10 and 100 ha cutoffs are analyst
+sensitivities, not a claimed source mapping unit. The companion verifier checks
+polygon validity, interior overlap, numerical area conservation and component
+classification after translation to a local origin. These metrics do not define
+vegetation habitat fragmentation.
+
+For a constant community in three land zones, the adjacent
+`../nested_spatial_contrasts/common_land_baseline_fixed_extract.R` reads saved
+continuous predictions for the frozen 261-species coverage roster at verified
+native cells. Retained cells require every species to have paired finite values;
+the same cell areas weight both prediction families. Shared statistics use the
+explicit `FIXED_261` support policy. This is extraction from existing projections,
+not species-model fitting or a global raster rebuild.
+
+`../../09_figures/render_reclamation_context.R` draws the matched-zone contrasts,
+human-activity associations, binary-fraction sensitivity and mapped configuration.
+The R renderers require Ghostscript for font embedding if the R installation lacks
+a Cairo PDF device; vector text remains editable. A fontconfig setup must be
+available on the execution node. Runtime assets and result files remain external.
+
