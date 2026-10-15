@@ -267,3 +267,20 @@ and paired surfaces retain separate identities and eligibility sets.
 city-year recording support and first-record windows, and lists predictor
 completeness exclusions. It is a feasibility inventory, not a fitted lag model
 or a recalibration of the species distribution models.
+
+`reclamation_record_lead_lag.R CONFIG.json` uses a fixed 813-taxon roster to
+relate mapped reclamation in one interval to first city records in a later
+window. Supply verified geometry eligibility, cached cohort geometries, the
+record-support root, roster and a fresh output root. `minimum_outcome_start`
+can align the focal analysis with the declared exposure period. City and period
+effects, historical recording support, duration offsets, record-intensity
+sensitivity and all declared lead/history variants are retained. Unrecorded
+periods are excluded rather than treated as confirmed non-invasion.
+
+`verify_reclamation_record_lead_lag.R CONFIG.json` independently recounts first
+records, checks temporal order, refits the Poisson mean and reconstructs the
+city-cluster covariance. The response is first recorded occurrence, not verified
+arrival. Adjacent later exposure cohorts share a calendar boundary with outcome
+windows because dates are five-year intervals; their lead term is a forward-bin
+check, not an exact event-time negative control. Neither model refits SDMs or
+recalibrates the original index.
