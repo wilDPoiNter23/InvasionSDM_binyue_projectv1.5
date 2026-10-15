@@ -237,3 +237,21 @@ The R renderers require Ghostscript for font embedding if the R installation lac
 a Cairo PDF device; vector text remains editable. A fontconfig setup must be
 available on the execution node. Runtime assets and result files remain external.
 
+
+The shared-zone renderer requires at least 20 matched cities for a primary
+comparison. An explicit `allow_small_sample_exploratory` setting can display a
+smaller sample, labelled exploratory; it does not change the support criterion
+or the primary coverage guard.
+
+`../nested_spatial_contrasts/common_land_response_identity.R CONFIG.json`
+compares a historical manuscript response with fixed-community FULL/ENV values
+on the same new reclamation geometry and jointly finite cells. Supply verified
+baseline/fixed-community roots, the original response and expected checksum, a
+native grid template, fresh output root, and declared 0/1/5-cell support levels.
+The zero-cell threshold retains any positive weighted support and is explicitly
+exploratory. Run `common_land_response_identity_verify.R CONFIG.json RECEIPT.json`
+afterwards; it independently reads native values, reconstructs all weighted
+zone/whole-city means, eligibility and bootstrap intervals. This diagnostic does
+not reproduce historical reclamation zones or establish the original species
+roster and normalization. Differently normalized response levels need not be
+comparable across model families.
