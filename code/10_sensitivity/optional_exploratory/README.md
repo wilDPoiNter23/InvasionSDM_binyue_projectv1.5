@@ -255,3 +255,15 @@ zone/whole-city means, eligibility and bootstrap intervals. This diagnostic does
 not reproduce historical reclamation zones or establish the original species
 roster and normalization. Differently normalized response levels need not be
 comparable across model families.
+
+`../nested_spatial_contrasts/common_land_full_surface.R CONFIG.json` performs
+a separate descriptive three-zone comparison directly within each supplied
+stored full-model surface. No fixed-species or cross-model finite-cell
+intersection is added. Positive finite mapped support defines its descriptive
+sample; 1/5-native-cell restrictions remain separate sensitivities. Original
+and paired surfaces retain separate identities and eligibility sets.
+
+`temporal_order_support.R CONFIG.json` checks dated city memberships, constructs
+city-year recording support and first-record windows, and lists predictor
+completeness exclusions. It is a feasibility inventory, not a fitted lag model
+or a recalibration of the species distribution models.
