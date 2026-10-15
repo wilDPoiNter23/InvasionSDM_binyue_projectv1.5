@@ -9,7 +9,9 @@ roster<-read.csv(cfg$roster,stringsAsFactors=FALSE)$species;stopifnot(length(ros
 first<-first[first$species%in%roster,];first$key<-key(first$city_id)
 minimum_start<-if(is.null(cfg$minimum_outcome_start))1991 else cfg$minimum_outcome_start
 panel<-panel[panel$outcome_start>=minimum_start,]
-panel$key<-key(panel$city_id);stopifnot(all(panel$prior_exposure_end<panel$outcome_start));panel$new_count<-vapply(seq_len(nrow(panel)),function(i)sum(first$key==panel$key[i]&first$first_record_year>=panel$outcome_start[i]&first$first_record_year<=panel$outcome_end[i]),integer(1))
+panel$key<-key(panel$city_id)
+if(!is.null(cfg$exclude_city_keys))panel<-panel[!panel$key%in%key(cfg$exclude_city_keys),]
+stopifnot(all(panel$prior_exposure_end<panel$outcome_start));panel$new_count<-vapply(seq_len(nrow(panel)),function(i)sum(first$key==panel$key[i]&first$first_record_year>=panel$outcome_start[i]&first$first_record_year<=panel$outcome_end[i]),integer(1))
 stopifnot(all(panel$new_count<=panel$recorded_species),all(panel$new_count>=0))
 gate<-read.csv(cfg$geometry_eligibility,stringsAsFactors=FALSE);keep<-key(gate$city_id[gate$eligible])
 areas<-list();sources<-list()

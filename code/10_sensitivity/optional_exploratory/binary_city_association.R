@@ -14,6 +14,7 @@ stopifnot(!anyDuplicated(key(p$city)),all(d$frozen_species_n==K),cfg$minimum_cit
 d$key<-key(d$city_id);p$key<-key(p$city)
 if(any(!d$key%in%p$key))stop("Unmatched city identity")
 d<-merge(d,p,by="key",all.x=TRUE)
+if(!is.null(cfg$exclude_city_keys))d<-d[!d$key%in%key(unlist(cfg$exclude_city_keys)),]
 d$log_recl<-log1p(d$reclamation_area);d$log_area<-log1p(d$area_km2)
 fields<-c("log_recl","log_area","area_km2","anthro_pc1","climate_pc1","soil_pc1","marine_pc1")
 summaries<-list();gates<-list();contrasts<-list();modelrows<-list()

@@ -5,6 +5,7 @@ receipt<-fromJSON(file.path(out,'receipt.json'));stopifnot(receipt$status=='LEAD
 rows<-read.csv(file.path(out,'fitted_city_period_data.csv'),stringsAsFactors=FALSE)
 coef_table<-read.csv(file.path(out,'lead_lag_coefficients.csv'),stringsAsFactors=FALSE)
 support<-read.csv(file.path(out,'model_support.csv'),stringsAsFactors=FALSE)
+if(!is.null(cfg$exclude_city_keys))stopifnot(!any(rows$key%in%tolower(trimws(cfg$exclude_city_keys))))
 minimum<-if(is.null(cfg$minimum_outcome_start))1991 else cfg$minimum_outcome_start
 first<-read.csv(file.path(cfg$record_root,'city_species_first_year.csv'),stringsAsFactors=FALSE)
 roster<-read.csv(cfg$roster,stringsAsFactors=FALSE)$species
