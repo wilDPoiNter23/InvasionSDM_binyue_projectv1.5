@@ -108,7 +108,7 @@ pinterval<-ggplot(l,aes(rank,lag_lower_years))+geom_segment(aes(yend=lag_upper_y
  labs(x='Reclamation-period unit (ordered)',y='Years from reclamation to first record',title='Date bounds: 96 units in 33 cities')
 pcdf<-ggplot(ec_plot,aes(year,cumulative,linetype=bound))+geom_hline(yintercept=.5,linewidth=.3,colour='grey65')+
  geom_step(colour='#356C91',linewidth=.65)+annotate('segment',x=13,xend=18,y=.5,yend=.5,linewidth=1.7,colour='#29877C')+
- annotate('text',x=15.5,y=.41,label='Median bounds: 13-18 years',size=2.05,family=font)+
+ annotate('text',x=23,y=.13,label='Median bounds: 13-18 years',size=2.05,family=font)+
  scale_y_continuous(labels=function(x)paste0(round(100*x),'%'))+labs(x='First-record delay (years)',y='City-balanced cumulative share',title='Equal weight per city')+
  theme(legend.position='bottom')
 state<-as.data.frame(table(all_lag$temporal_state));names(state)<-c('state','n')

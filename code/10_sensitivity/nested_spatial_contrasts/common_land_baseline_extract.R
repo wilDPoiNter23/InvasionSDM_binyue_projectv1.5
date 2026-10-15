@@ -23,6 +23,9 @@ if(!is.null(cfg$land_mask)) {
 column<-rast(nrows=nrow(r),ncols=1,xmin=xmin(r),xmax=xmin(r)+res(r)[1],ymin=ymin(r),ymax=ymax(r),crs=crs(r))
 row_area<-as.numeric(values(cellSize(column,unit="km",mask=FALSE)))
 city_union<-st_union(st_geometry(cities))
+native_geometry<-function(x)st_set_crs(st_make_valid(st_transform(x,crs(r))),NA)
+cities_native<-native_geometry(st_geometry(cities))
+city_union_native<-st_union(cities_native)
 coverage<-read.csv(cfg$coverage_table,stringsAsFactors=FALSE);coverage<-coverage[coverage$layer=="coastal_change",]
 if(anyDuplicated(coverage$city_id))stop("Duplicate cohort coverage cities")
 bad<-coverage$city_id[!is.finite(coverage$mapped_area_km2)|!is.finite(coverage$overlap_excess_km2)|coverage$overlap_excess_km2>pmax(.001,.001*coverage$mapped_area_km2)]
@@ -47,7 +50,17 @@ for(i in seq_len(nrow(cities))) {
     if(common_polygon_area(suppressWarnings(st_intersection(geom[2],geom[3])))>1e-5)stop("Within-city zones overlap")
     conservation<-abs(common_polygon_area(geom[2:3])-common_polygon_area(cities[i,]))/common_polygon_area(cities[i,])
     if(!is.finite(conservation)||conservation>1e-8)stop("Within-city area is not conserved")
-    polygons<-st_make_valid(st_transform(st_sf(zone=zones,geometry=geom),crs(r)))
+    native<-common_native_partition(cities_native[i],native_geometry(reclaimed),
+      native_geometry(st_buffer(st_geometry(cities[i,]),cfg$ring_metres)),city_union_native)
+    native_city_area<-common_polygon_area(cities_native[i])
+    native_conservation<-abs(common_polygon_area(native[2:3])-native_city_area)/native_city_area
+    if(!is.finite(native_conservation)||native_conservation>1e-8)stop("Native within-city area is not conserved")
+    for(pair in list(c(1,2),c(1,3),c(2,3))) {
+      overlap<-common_polygon_area(suppressWarnings(st_intersection(native[pair[1]],native[pair[2]])))
+      if(overlap>1e-12*prod(res(r)))stop("Native zones overlap")
+    }
+    polygons<-st_sf(zone=zones,geometry=st_set_crs(native,crs(r)))
+    geom<-st_transform(st_geometry(polygons),6933)
     e<-terra::extract(r,vect(polygons),exact=TRUE,cells=TRUE)
     fraction_name<-intersect(c("fraction","weight"),names(e));if(length(fraction_name)!=1L)stop("Exact native fractions missing")
     e$fraction<-e[[fraction_name]]
@@ -102,7 +115,8 @@ paths<-unique(c(city_components,cfg$paired_manifest,cfg$full_mean,cfg$env_mean,c
 write.csv(data.frame(path=paths,sha256=vapply(paths,function(p)digest(file=p,algo="sha256"),character(1))),file.path(cfg$output_root,"input_checksums.csv"),row.names=FALSE)
 write_json(list(status="EXTRACTED",geometry_scope="Current mapped reported change-year endpoints; not historical39percent reconstruction",
   reported_cohort_endpoints=cfg$reported_cohort_endpoints,ring_metres=cfg$ring_metres,
-  ring_definition="EPSG6933 city buffer minus union of all108 city polygons",
+  ring_definition="EPSG6933 city buffer transformed to native CRS then minus union of all108 native city polygons",
+  partition_definition="Reclaimed clipped to native city; non-reclaimed native city minus reclaimed; all zone differences formed in native CRS",
   support="Native1/24degree; exact polygon fractions times geodesic cell area; same FULL/ENV cells and weights",
   land_mask=if(is.null(cfg$land_mask))"No independent shoreline mask: common finite modeled terrestrial support only"else cfg$land_mask,
   response_identity="FULL retains human predictors including reclamation where fitted; ENV excludes all specified human predictors",

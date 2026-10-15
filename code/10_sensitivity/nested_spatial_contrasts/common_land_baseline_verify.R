@@ -3,6 +3,8 @@ suppressPackageStartupMessages({library(terra);library(jsonlite);library(digest)
 a<-commandArgs(TRUE);if(length(a)!=2L)stop("Supply private configuration and fresh verification output")
 if(file.exists(a[2]))stop("Verification output exists")
 cfg<-fromJSON(a[1],simplifyVector=TRUE)
+receipt<-fromJSON(file.path(cfg$output_root,"extraction_receipt.json"))
+if(is.null(receipt$partition_definition) || !grepl("differences formed in native CRS",receipt$partition_definition,fixed=TRUE))stop("Native partition definition missing")
 d<-read.csv(file.path(cfg$output_root,"zone_source_means.csv"),stringsAsFactors=FALSE)
 gates<-read.csv(file.path(cfg$output_root,"city_geometry_status.csv"),stringsAsFactors=FALSE)
 stopifnot(nrow(gates)==108L,!anyDuplicated(gates$city_id),
