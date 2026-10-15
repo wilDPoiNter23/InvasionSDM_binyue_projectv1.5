@@ -7,6 +7,8 @@ panel<-read.csv(file.path(cfg$record_root,'prospective_window_support.csv'),stri
 first<-read.csv(file.path(cfg$record_root,'city_species_first_year.csv'),stringsAsFactors=FALSE)
 roster<-read.csv(cfg$roster,stringsAsFactors=FALSE)$species;stopifnot(length(roster)==813L,!anyDuplicated(roster))
 first<-first[first$species%in%roster,];first$key<-key(first$city_id)
+minimum_start<-if(is.null(cfg$minimum_outcome_start))1991 else cfg$minimum_outcome_start
+panel<-panel[panel$outcome_start>=minimum_start,]
 panel$key<-key(panel$city_id);stopifnot(all(panel$prior_exposure_end<panel$outcome_start));panel$new_count<-vapply(seq_len(nrow(panel)),function(i)sum(first$key==panel$key[i]&first$first_record_year>=panel$outcome_start[i]&first$first_record_year<=panel$outcome_end[i]),integer(1))
 stopifnot(all(panel$new_count<=panel$recorded_species),all(panel$new_count>=0))
 gate<-read.csv(cfg$geometry_eligibility,stringsAsFactors=FALSE);keep<-key(gate$city_id[gate$eligible])
@@ -61,7 +63,7 @@ write.csv(do.call(rbind,support),file.path(out,'model_support.csv'),row.names=FA
 if(length(results))write.csv(do.call(rbind,results),file.path(out,'lead_lag_coefficients.csv'),row.names=FALSE)
 if(length(fitted_rows))write.csv(do.call(rbind,fitted_rows),file.path(out,'fitted_city_period_data.csv'),row.names=FALSE)
 write_json(list(status='LEAD_LAG_RECORD_ASSOCIATION_COMPLETE',roster_n=813,roster_sha256=digest(file=cfg$roster,algo='sha256'),
- primary='H1_LAG_M0; H1_LAG_M1 recording-intensity sensitivity; all H10 and lead checks retained',
+ minimum_outcome_start=minimum_start,primary='H1_LAG_M0; H1_LAG_M1 recording-intensity sensitivity; all H10 and lead checks retained',
  outcome='First recorded selected species in a city during a later window, not verified arrival or establishment',
  sample='Mapped-cohort cities with recorded targets, historical recording support, at least two periods and a positive outcome sum',
  uncertainty='City-cluster sandwich HC1 with finite-group t intervals; Poisson mean with dispersion reported',
