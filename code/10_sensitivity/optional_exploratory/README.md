@@ -201,3 +201,18 @@ include reclamation and are retained as diagnostic provenance only.
 delays from stored species/cohort first records, including city-balanced and
 observation-opportunity summaries. These are recorded delays rather than
 colonisation times; unrecorded cohorts remain unknown.
+# Reclamation context and manuscript figures
+
+`reclamation_human_associations.R` evaluates four prespecified raw human-activity
+indicators using rank correlations, area-controlled log-area associations and
+reclamation-fraction sensitivity. Its companion verifier reconstructs ranks,
+coefficients, robust intervals and multiplicity adjustment. Outputs are
+associations and do not establish causal mediation or habitat fragmentation.
+
+`../../09_figures/render_reclamation_evidence.R` renders verified period,
+first-record-delay and observed-richness component results in R. Both prediction
+families and the record-intensity sensitivity are retained. Supply a private JSON
+configuration with external input roots and an external output root. Figure
+bundles include editable vector exports, raster previews, source tables and
+captions. No species models are trained by these modules.
+
