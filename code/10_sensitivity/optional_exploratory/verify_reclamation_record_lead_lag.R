@@ -22,7 +22,7 @@ for(case in unique(coef_table$case)){
  mu<-refit$fitted.values;A<-matrix(0,ncol(X),ncol(X));meat<-A
  for(i in seq_len(nrow(X)))A<-A+mu[i]*tcrossprod(X[i,])
  for(city in unique(d$key)){ix<-which(d$key==city);s<-colSums(X[ix,,drop=FALSE]*(y[ix]-mu[ix]));meat<-meat+tcrossprod(s)}
- G<-length(unique(d$key));n<-nrow(X);p<-ncol(X);B<-qr.solve(A,diag(p));V<-B%*%meat%*%t(B)*G/(G-1)*(n-1)/(n-p)
+ G<-length(unique(d$key));n<-nrow(X);p<-ncol(X);B<-chol2inv(chol(A));V<-B%*%meat%*%t(B)*G/(G-1)*(n-1)/(n-p)
  for(term in coef_table$term[coef_table$case==case]){
   j<-match(term,colnames(X));s<-sqrt(V[j,j]);b<-refit$coefficients[j];crit<-qt(.975,G-1);r<-coef_table[coef_table$case==case&coef_table$term==term,]
   stopifnot(nrow(r)==1L,abs(r$estimate-b)<1e-6,abs(r$se-s)<1e-6,max(abs(c(r$lower,r$upper)-c(b-crit*s,b+crit*s)))<1e-5,
