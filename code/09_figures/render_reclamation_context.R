@@ -35,10 +35,16 @@ if(!is.null(cfg$baseline_root)) {
  priorities<-c('FIXED_261','STRICT_684','PAIRED_AVAILABLE')
  eligible<-priorities[priorities%in%names(ns)]
  eligible<-eligible[vapply(eligible,function(x)ns[[x]]>=20,logical(1))]
- if(!length(eligible))stop('No prespecified community support has at least 20 matched cities')
+ exploratory<-FALSE
+ if(!length(eligible)){
+  if(!isTRUE(cfg$allow_small_sample_exploratory))stop('No prespecified community support has at least 20 matched cities')
+  eligible<-priorities[priorities%in%names(ns)]
+  if(!length(eligible))stop('No matched cities available')
+  exploratory<-TRUE
+ }
  policy<-eligible[1]
  q<-subset(d,support_policy==policy&minimum_cell_equivalents==1)
- stopifnot(nrow(q)>0,length(unique(q$city_id))>=20)
+ stopifnot(nrow(q)>0);if(!exploratory)stopifnot(length(unique(q$city_id))>=20)
  stopifnot(all(table(q$city_id)==6L))
  n<-length(unique(q$city_id));zlabels<-c(OUTSIDE_RING='Outside-city\nring',NON_RECLAIMED_CITY='Other urban\nland',RECLAIMED_CITY='Reclaimed\nurban land')
  q$zone<-factor(q$zone,levels=names(zlabels),labels=zlabels)
@@ -46,7 +52,7 @@ if(!is.null(cfg$baseline_root)) {
  pmeans<-ggplot(q,aes(zone,mean_suitability,group=city_id))+geom_line(colour='grey75',linewidth=.25,alpha=.55)+
  geom_point(aes(colour=group),size=.65,alpha=.6)+geom_line(data=mu,aes(group=group),colour='black',linewidth=.8)+
  geom_point(data=mu,aes(group=group),colour='black',size=1.6)+facet_wrap(~group,nrow=1)+scale_colour_manual(values=cols)+
- labs(x=NULL,y='Current predicted suitability',title=paste0('Same ',n,' cities and three disjoint land zones'))+theme(legend.position='none')
+ labs(x=NULL,y='Current predicted suitability',title=paste0('Same ',n,' cities and three disjoint land zones',if(exploratory)' (exploratory; coverage guard not met)'else''))+theme(legend.position='none')
  e<-subset(ef,support_policy==policy&minimum_cell_equivalents==1)
  labels<-c(CITY_MINUS_RING='Whole city - ring',NON_RECLAIMED_MINUS_RING='Other urban land - ring',RECLAIMED_MINUS_RING='Reclaimed land - ring',RECLAIMED_MINUS_NON_RECLAIMED='Reclaimed - other urban land')
  labels<-labels[names(labels)%in%e$contrast]
@@ -58,8 +64,8 @@ if(!is.null(cfg$baseline_root)) {
  scale_y_continuous(breaks=seq_along(levels(e$label)),labels=levels(e$label))+
  scale_colour_manual(values=cols)+labs(x='Within-city suitability difference',y=NULL,title='Common outside-city reference; 95% city-bootstrap intervals')
  save_figure((pmeans/pdelta)+plot_layout(heights=c(1.25,1))+plot_annotation(tag_levels='a'),'common_land_baseline',128)
- writeLines(paste('Primary policy selected by coverage only:',policy,'; cities:',n),file.path(out,'land_zone_primary_sample.txt'))
- captions<-c(captions,paste0('Common land baseline. Three disjoint zones are compared in the same ',n,' cities under ',policy,' support and at least one native-cell equivalent per zone. Selection depends only on community coverage: fixed 261-species support is preferred when supplied and at least 20 cities qualify, followed by strict 684-species and then paired-available support. FIXED_261 means every retained cell has finite paired predictions for all members of the pre-existing 261-species coverage roster. Grey lines are city means and black lines are equal-city means; lower panels show paired differences and 95% intervals from 1,999 city bootstrap draws. Within zones, native geodesic cell areas times exact polygon fractions weight the means; FULL and ENV use identical eligible cells and weights. Reclaimed land uses the mapped five-year reclamation cohorts, not the historical manuscript zone definition. The outside reference is the EPSG:6933 projected 50-km buffer minus all 108 city polygons, restricted to finite modeled support; no independent shoreline mask was available. Paired-available support can contain different contributing species across cells and its counts are provided. Ring=100 city-specific indices and all computed support policies are retained in source tables; the plotted absolute differences avoid unstable division by very small ring values. These are spatial predictions, not causal effects.'))
+ writeLines(paste(if(exploratory)'EXPLORATORY_ONLY; prespecified 20-city primary guard NOT MET; policy:'else'Primary policy selected by coverage only:',policy,'; cities:',n),file.path(out,'land_zone_primary_sample.txt'))
+ captions<-c(captions,paste0(if(exploratory)'EXPLORATORY ONLY: the prespecified 20-city minimum for a primary comparison was not met. 'else'', 'Common land baseline. Three disjoint zones are compared in the same ',n,' cities under ',policy,' support and at least one native-cell equivalent per zone. Selection depends only on community coverage: fixed 261-species support is preferred when supplied and at least 20 cities qualify, followed by strict 684-species and then paired-available support. FIXED_261 means every retained cell has finite paired predictions for all members of the pre-existing 261-species coverage roster. Grey lines are city means and black lines are equal-city means; lower panels show paired differences and 95% intervals from 1,999 city bootstrap draws. Within zones, native geodesic cell areas times exact polygon fractions weight the means; FULL and ENV use identical eligible cells and weights. Reclaimed land uses the mapped five-year reclamation cohorts, not the historical manuscript zone definition. The outside reference is the EPSG:6933 projected 50-km buffer minus all 108 city polygons, restricted to finite modeled support; no independent shoreline mask was available. Paired-available support can contain different contributing species across cells and its counts are provided. Ring=100 city-specific indices and all computed support policies are retained in source tables; the plotted absolute differences avoid unstable division by very small ring values. These are spatial predictions, not causal effects.'))
 }
 
 if(!is.null(cfg$human_root)) {
