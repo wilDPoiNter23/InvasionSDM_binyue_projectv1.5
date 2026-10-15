@@ -21,8 +21,9 @@ read_source <- function(root, name, label) {
  d
 }
 families <- systemfonts::system_fonts()$family
-font <- if('Arial'%in%families)'Arial' else 'Liberation Sans'
-stopifnot(font %in% families)
+font <- if(!capabilities('cairo'))'Helvetica' else if('Arial'%in%families)'Arial' else 'Liberation Sans'
+stopifnot(font=='Helvetica'||font %in% families)
+if(!capabilities('cairo'))stopifnot(nzchar(Sys.which('gs')))
 theme_set(theme_classic(base_size=6.5,base_family=font)+theme(
  axis.line=element_line(linewidth=.3),axis.ticks=element_line(linewidth=.3),
  axis.text=element_text(size=6,colour='black'),legend.text=element_text(size=6),
@@ -34,7 +35,15 @@ exports <- list(); captions <- character()
 save_figure <- function(p,name,height=96) {
  w <- 183/25.4; h <- height/25.4
  svglite(file.path(out,paste0(name,'.svg')),width=w,height=h);print(p);dev.off()
- cairo_pdf(file.path(out,paste0(name,'.pdf')),width=w,height=h,family=font);print(p);dev.off()
+ pdf_file<-file.path(out,paste0(name,'.pdf'))
+ if(capabilities('cairo')) {
+  cairo_pdf(pdf_file,width=w,height=h,family=font);print(p);dev.off()
+ } else {
+  pdf(pdf_file,width=w,height=h,family='Helvetica',useDingbats=FALSE);print(p);dev.off()
+  embedded<-file.path(out,paste0(name,'_embedded.pdf'))
+  embedFonts(pdf_file,outfile=embedded)
+  stopifnot(file.exists(embedded),file.info(embedded)$size>1000,file.rename(embedded,pdf_file))
+ }
  agg_tiff(file.path(out,paste0(name,'.tiff')),width=w,height=h,units='in',res=600,compression='lzw');print(p);dev.off()
  agg_png(file.path(out,paste0(name,'.png')),width=w,height=h,units='in',res=200);print(p);dev.off()
  exports[[name]] <<- list(width_mm=183,height_mm=height,raster_dpi=600,font=font)
@@ -143,5 +152,6 @@ writeLines(capture.output(sessionInfo()),file.path(out,'sessionInfo.txt'))
 write_json(list(status='RENDERED_FROM_EXISTING_TABLES',backend='R',font=font,exports=exports,
  source_tables=provenance,configuration_sha256=digest(file=args[1],algo='sha256'),
  script_sha256=digest(file=sub('^--file=','',grep('^--file=',commandArgs(),value=TRUE)[1]),algo='sha256'),
+ pdf_device=if(capabilities('cairo'))'cairo_pdf'else'R pdf with embedFonts',
  visual_review_required=TRUE),file.path(out,'figure_receipt.json'),auto_unbox=TRUE,pretty=TRUE)
 cat('Rendered',length(exports),'figure bundles\n')

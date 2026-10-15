@@ -4,6 +4,11 @@ a<-commandArgs(TRUE);if(length(a)!=2L)stop("Supply private configuration and fre
 if(file.exists(a[2]))stop("Verification output exists")
 cfg<-fromJSON(a[1],simplifyVector=TRUE)
 d<-read.csv(file.path(cfg$output_root,"zone_source_means.csv"),stringsAsFactors=FALSE)
+gates<-read.csv(file.path(cfg$output_root,"city_geometry_status.csv"),stringsAsFactors=FALSE)
+stopifnot(nrow(gates)==108L,!anyDuplicated(gates$city_id),
+ all(gates$status %in% c("EXTRACTED","EXCLUDED_ALL_THREE_ZONES")),
+ all(nzchar(gates$reason[gates$status!="EXTRACTED"])),
+ setequal(unique(d$city_id),gates$city_id[gates$status=="EXTRACTED"]))
 hashes<-read.csv(file.path(cfg$output_root,"input_checksums.csv"),stringsAsFactors=FALSE)
 stopifnot(all(vapply(seq_len(nrow(hashes)),function(i)digest(file=hashes$path[i],algo="sha256")==hashes$sha256[i],logical(1))))
 r<-c(rast(cfg$full_mean),rast(cfg$env_mean),rast(cfg$species_count));names(r)<-c("FULL","ENV","species_count")
@@ -12,6 +17,7 @@ row_area<-as.numeric(values(cellSize(column,unit="km",mask=FALSE)))
 checks<-0L;max_error<-0;sample_checks<-0L
 for(path in list.files(file.path(cfg$output_root,"cells"),pattern="[.]csv$",full.names=TRUE)) {
   e<-read.csv(path,stringsAsFactors=FALSE);city<-unique(e$city_id);stopifnot(length(city)==1L)
+  if(!city %in% gates$city_id[gates$status=="EXTRACTED"])next
   stopifnot(all(is.na(e$fraction)|(e$fraction>=0&e$fraction<=1)),max(tapply(e$fraction,e$cell,sum,na.rm=TRUE))<=1+1e-8)
   area<-row_area[rowFromCell(r,e$cell)]*e$fraction
   stopifnot(max(abs(area-e$area_km2),na.rm=TRUE)<1e-8)

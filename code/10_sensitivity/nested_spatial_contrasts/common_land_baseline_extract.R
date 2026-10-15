@@ -1,5 +1,8 @@
 # Three disjoint zones on identical native-grid support for paired responses.
 suppressPackageStartupMessages({library(sf);library(terra);library(jsonlite);library(digest)})
+script_arg<-grep("^--file=",commandArgs(FALSE),value=TRUE)
+if(length(script_arg)!=1L)stop("Run with Rscript")
+source(file.path(dirname(sub("^--file=","",script_arg)),"common_land_baseline_geometry.R"))
 a<-commandArgs(TRUE);if(length(a)!=1L)stop("Supply private configuration")
 cfg<-fromJSON(a[1],simplifyVector=TRUE);sf_use_s2(FALSE)
 if(dir.exists(cfg$output_root))stop("Fresh output root required")
@@ -41,8 +44,8 @@ for(i in seq_len(nrow(cities))) {
     ring<-suppressWarnings(st_difference(st_buffer(st_geometry(cities[i,]),cfg$ring_metres),city_union))
     geom<-st_sfc(ring[[1]],nonreclaimed[[1]],reclaimed[[1]],crs=6933)
     if(any(st_is_empty(geom)))stop("EMPTY_ZONE_GEOMETRY")
-    if(any(as.numeric(st_area(suppressWarnings(st_intersection(geom[2],geom[3]))))>1e-5))stop("Within-city zones overlap")
-    conservation<-abs(sum(as.numeric(st_area(geom[2:3])))-as.numeric(st_area(cities[i,])))/as.numeric(st_area(cities[i,]))
+    if(common_polygon_area(suppressWarnings(st_intersection(geom[2],geom[3])))>1e-5)stop("Within-city zones overlap")
+    conservation<-abs(common_polygon_area(geom[2:3])-common_polygon_area(cities[i,]))/common_polygon_area(cities[i,])
     if(!is.finite(conservation)||conservation>1e-8)stop("Within-city area is not conserved")
     polygons<-st_make_valid(st_transform(st_sf(zone=zones,geometry=geom),crs(r)))
     e<-terra::extract(r,vect(polygons),exact=TRUE,cells=TRUE)
@@ -55,7 +58,7 @@ for(i in seq_len(nrow(cities))) {
       xy<-xyFromCell(r,e$cell[j]);dx<-res(r)[1]/2;dy<-res(r)[2]/2
       box<-st_sfc(st_polygon(list(rbind(c(xy[1]-dx,xy[2]-dy),c(xy[1]+dx,xy[2]-dy),c(xy[1]+dx,xy[2]+dy),c(xy[1]-dx,xy[2]+dy),c(xy[1]-dx,xy[2]-dy)))))
       pg<-st_set_crs(st_geometry(polygons[e$ID[j],]),NA)
-      clip<-suppressWarnings(st_intersection(pg,box));actual<-sum(as.numeric(st_area(clip)))/as.numeric(st_area(box))
+      clip<-suppressWarnings(st_intersection(pg,box));actual<-common_polygon_area(clip)/common_polygon_area(box)
       if(!is.finite(actual)||actual<0||actual>1+1e-10)stop("Independent fraction correction failed")
       corrections[[length(corrections)+1L]]<-data.frame(city_id=city,zone=zones[e$ID[j]],cell=e$cell[j],original=e$fraction[j],independent_geos=actual)
       e$fraction[j]<-min(1,actual)
@@ -77,19 +80,25 @@ for(i in seq_len(nrow(cities))) {
         finite_native_cells=length(unique(d$cell)),native_cell_equivalents=equivalent,common_area_km2=weight,
         minimum_contributing_species=if(nrow(d))min(d$species_count)else NA_real_,maximum_contributing_species=if(nrow(d))max(d$species_count)else NA_real_,
         area_weighted_species_count=if(weight>0)sum(d$area_km2*d$species_count)/weight else NA_real_,
-        geom_zone_area_km2=as.numeric(st_area(geom[match(zone,zones)]))/1e6)
+        geom_zone_area_km2=common_polygon_area(geom[match(zone,zones)])/1e6)
     }
     checksums[[length(checksums)+1L]]<-data.frame(city_id=city,path=cp,sha256=digest(file=cp,algo="sha256"))
     data.frame(city_id=city,status="EXTRACTED",reason="",within_city_area_relative_error=conservation)
   },error=function(error)data.frame(city_id=city,status="EXCLUDED_ALL_THREE_ZONES",reason=conditionMessage(error),within_city_area_relative_error=NA_real_))
-  gates[[i]]<-result;cat(city,result$status,"\n");flush.console()
+  gates[[i]]<-result
+  write.csv(do.call(rbind,gates),file.path(cfg$output_root,"city_geometry_status.csv"),row.names=FALSE)
+  if(length(summary_rows))write.csv(do.call(rbind,summary_rows),file.path(cfg$output_root,"zone_source_means.csv"),row.names=FALSE)
+  if(length(corrections))write.csv(do.call(rbind,corrections),file.path(cfg$output_root,"native_fraction_corrections.csv"),row.names=FALSE)
+  if(length(checksums))write.csv(do.call(rbind,checksums),file.path(cfg$output_root,"cohort_source_checksums.csv"),row.names=FALSE)
+  cat(city,result$status,result$reason,"\n");flush.console()
 }
 if(!length(summary_rows))stop("No eligible three-zone geometry")
 write.csv(do.call(rbind,summary_rows),file.path(cfg$output_root,"zone_source_means.csv"),row.names=FALSE)
 write.csv(do.call(rbind,gates),file.path(cfg$output_root,"city_geometry_status.csv"),row.names=FALSE)
 if(length(corrections))write.csv(do.call(rbind,corrections),file.path(cfg$output_root,"native_fraction_corrections.csv"),row.names=FALSE)
 if(length(checksums))write.csv(do.call(rbind,checksums),file.path(cfg$output_root,"cohort_source_checksums.csv"),row.names=FALSE)
-paths<-c(cfg$cities,cfg$paired_manifest,cfg$full_mean,cfg$env_mean,cfg$species_count,cfg$coverage_table)
+city_components<-list.files(dirname(cfg$cities),pattern=paste0("^",tools::file_path_sans_ext(basename(cfg$cities)),"[.]"),full.names=TRUE)
+paths<-unique(c(city_components,cfg$paired_manifest,cfg$full_mean,cfg$env_mean,cfg$species_count,cfg$coverage_table,cfg$land_mask))
 write.csv(data.frame(path=paths,sha256=vapply(paths,function(p)digest(file=p,algo="sha256"),character(1))),file.path(cfg$output_root,"input_checksums.csv"),row.names=FALSE)
 write_json(list(status="EXTRACTED",geometry_scope="Current mapped reported change-year endpoints; not historical39percent reconstruction",
   reported_cohort_endpoints=cfg$reported_cohort_endpoints,ring_metres=cfg$ring_metres,
