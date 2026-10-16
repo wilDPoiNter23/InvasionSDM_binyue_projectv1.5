@@ -24,7 +24,7 @@ for(f in files){z<-readRDS(f);if(is.null(z$city)||is.null(z$geometry)||!nrow(z$g
 }
 zones<-do.call(rbind,rows);w<-do.call(rbind,weights);cells<-sort(unique(w$cell));w$cell_index<-match(w$cell,cells)
 stopifnot(!anyDuplicated(paste(zones$city_id,zones$period_endpoint,zones$landuse)),all(w$weight_km2>0))
-saveRDS(list(zones=zones,weights=w,cells=cells,grid=template),file.path(out,'native_support.rds'))
+saveRDS(list(zones=zones,weights=w,cells=cells,grid_path=manifest$env_projection[1]),file.path(out,'native_support.rds'))
 write.csv(zones,file.path(out,'zones.csv'),row.names=FALSE);write.csv(do.call(rbind,sources),file.path(out,'geometry_sources.csv'),row.names=FALSE)
 write_json(list(status='NATIVE_SUPPORT_PREPARED',cities=length(unique(zones$city_id)),zones=nrow(zones),cells=length(cells),
  species_manifest_sha256=digest(file=cfg$paired_manifest,algo='sha256'),support_sha256=digest(file=file.path(out,'native_support.rds'),algo='sha256'),
