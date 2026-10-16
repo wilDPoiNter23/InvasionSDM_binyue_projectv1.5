@@ -39,3 +39,9 @@ cell values and species counts, city coverage, zonal means, and bootstrap
 contrasts. Equal-city and pooled-area summaries are separate; intervals resample
 whole cities. Direct numerical agreement with the historical surface is required
 before attributing its provenance to a reconstruction.
+
+After comparison, `decompose_missing_support.R CONFIG` separates the contribution
+of all-missing grid cells from the denominator used where some species have
+predictions. It reports each recipe's available city sample and an additional
+comparison on all cities computable under both recipes. The latter isolates
+processing steps; it never selects a historical fixed city list.

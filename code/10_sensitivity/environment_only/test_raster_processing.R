@@ -1,11 +1,11 @@
 # Numerical regression checks for missing-value, binary and city-coverage rules.
 suppressPackageStartupMessages({library(terra);library(sf);library(jsonlite)})
-a<-commandArgs(TRUE);stopifnot(length(a)==1L);script<-normalizePath(a[1],mustWork=TRUE)
+a<-commandArgs(TRUE);stopifnot(length(a)%in%c(1L,2L));script<-normalizePath(a[1],mustWork=TRUE)
 root<-tempfile('processing_');dir.create(root)
 r<-rast(nrows=2,ncols=6,xmin=0,xmax=6,ymin=0,ymax=2,crs='EPSG:4326')
-f1<-c(800,200,NA,700,100,NA,800,200,NA,700,100,NA)
-f2<-c(600,300,NA,500,100,NA,600,300,NA,500,100,NA)
-e1<-f1;e1[1]<-NA;e2<-f2*.5
+f1<-c(NA,600,NA,700,100,NA,800,600,NA,700,100,NA)
+f2<-c(NA,400,NA,500,100,NA,600,400,NA,500,100,NA)
+e1<-f1;e1[2]<-NA;e2<-f2*.5
 put<-function(v,name){z<-r;values(z)<-v;p<-file.path(root,paste0(name,'.tif'));writeRaster(z,p);p}
 paths<-c(put(f1,'first'),put(f2,'second'),put(e1,'envfirst'),put(e2,'envsecond'))
 bin<-put(ifelse(is.finite(f2),as.numeric(f2>=500),NA),'second_TSSbin')
@@ -26,4 +26,8 @@ stopifnot(all(is.finite(d$values$ALL_FULL_CONTINUOUS__SCALE__ZERO_FIXED)),any(is
 expected<-(f1/1000+f2/1000)/2;got<-d$values$PAIRED_FULL__SCALE__AVAILABLE
 stopifnot(identical(is.finite(expected),is.finite(got)),max(abs(expected-got),na.rm=TRUE)<1e-7)
 g<-read.csv(file.path(cfg$output_root,'city_geometry_status.csv'));stopifnot(length(unique(g$city_id))==3,!any(g$status=='GEOMETRY_ERROR'),sum(g$status=='ZERO_GEOMETRY')==1L)
+if(length(a)==2L){stopifnot(system2(exe,c(shQuote(normalizePath(a[2],mustWork=TRUE)),shQuote(cp)))==0)
+ z<-read.csv(file.path(cfg$output_root,'missing_support_decomposition.csv'));z<-z[z$base_variant=='PAIRED_FULL__SCALE__ZERO_FIXED'&z$city_scope=='SAME_COMPUTABLE_CITIES',]
+ stopifnot(z$difference[z$stage=='ZERO_FIXED']<0,z$difference[z$stage=='ZERO_FIXED_MODELED_SUPPORT']>0,z$difference[z$stage=='AVAILABLE']>0)
+}
 cat('PASS: binary selection, global normalization, missing-value denominators, joint membership and all-city geometry\n')
