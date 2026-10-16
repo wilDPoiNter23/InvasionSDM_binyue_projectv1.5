@@ -304,3 +304,39 @@ covariates and qualitative reclamation amounts are not replaced with zeros.
 `../../09_figures/render_land_reference.R CONFIG.json` presents the original
 index on one outside-city reference. Re-expression alone is algebraic; empirical
 robustness comes from the declared matched sample, zones and extraction rules.
+
+### Hierarchical cohort and use analysis
+
+Run `coastal_bayes_prepare.R CONFIG.json`, then
+`coastal_bayes_extract.R CONFIG.json ENV FIRST COUNT` for the complete species
+roster and `coastal_bayes_fit.R CONFIG.json ENV`. Repeat extraction and fitting
+for FULL after ENV. Saved predictions are reused without fitting SDMs.
+
+Preparation retains valid city-by-cohort-by-use geometry and exact native-cell
+geodesic area weights. Each species and response uses its own finite cells;
+there is no minimum cell count or cross-response finite-cell intersection.
+The private configuration supplies source paths, exclusions, reference year,
+sampler lengths, seed and external output root.
+
+The Gaussian response is logit((suitability+epsilon)/(1+2*epsilon)). Fixed terms
+are cohort age centred within city, city mean cohort age, land use and scaled
+log zone area. Random intercepts represent cities, zones nested within cities,
+and species crossed with cities. Fixed coefficients have normal(0,2) priors;
+residual and group variances have inverse-gamma(shape=2,rate=1) priors.
+Four independent Gibbs chains use exact scalar Gaussian and inverse-gamma
+conditionals. A likelihood-preserving conditional intercept shift improves
+mixing. The primary epsilon is0.0005; separate prior and epsilon sensitivities
+are retained. Random terms are marginalised for response-scale predictions.
+
+`test_coastal_bayes.R CODE_DIRECTORY` checks an analytical Gaussian posterior
+and simulated crossed/nested effects. `verify_coastal_bayes.R CONFIG.json`
+independently rereads source raster coordinates and reconstructs coefficient
+summaries. Rank-normalised folded split-Rhat and per-chain initial-positive
+autocorrelation effective sample estimates accompany every parameter. These
+are regression-parameter intervals conditional on saved predictions, not a
+propagation of all SDM uncertainty. Age contrasts compare formation cohorts;
+they do not estimate longitudinal change of the same parcel.
+
+`coastal_direct_zone_compare.R CONFIG.json` reuses verified zone means and
+compares the two urban zones with no outside-ring condition. All products and
+contrasts are retained irrespective of direction.

@@ -10,3 +10,10 @@ X<-cbind(1,rnorm(480));y<-drop(X%*%c(-.5,.4))+rnorm(20,0,.3)[city]+rnorm(12,0,.3
 z<-coastal_gibbs(X,y,list(city,sp,zone),warmup=1500L,samples=4000L,thin=2L,seed=86L)
 q<-quantile(z$beta[,2],c(.025,.975));stopifnot(q[1]<.4,q[2]>.4,all(is.finite(z$beta)))
 cat('PASS_ANALYTICAL_POSTERIOR_AND_CROSSED_SIMULATION\n')
+set.seed(91);X<-cbind(1,rep(rnorm(80),each=6));y<-drop(X%*%c(-.5,.4))+rnorm(20,0,.3)[city]+rnorm(12,0,.3)[sp]+rnorm(80,0,.2)[zone]+rnorm(480,0,.2)
+ordinary<-coastal_gibbs(X,y,list(city,sp,zone),warmup=2000L,samples=12000L,thin=2L,seed=87L,zone_shift=FALSE)
+blocked<-coastal_gibbs(X,y,list(city,sp,zone),warmup=2000L,samples=12000L,thin=2L,seed=88L,zone_shift=TRUE)
+stopifnot(max(abs(colMeans(ordinary$beta)-colMeans(blocked$beta)))<.04,
+ abs(sd(ordinary$beta[,2])-sd(blocked$beta[,2]))<.02,
+ isTRUE(blocked$blocked_zone_shift),!ordinary$blocked_zone_shift)
+cat('PASS_BLOCKED_AND_COORDINATE_POSTERIOR_AGREEMENT\n')
