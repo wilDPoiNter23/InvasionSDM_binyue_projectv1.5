@@ -73,7 +73,28 @@ if(phase=='prepare'){
    cat(label,city,result,'\n');flush.console()
   }
  }
- w<-do.call(rbind,weight_rows);cells<-sort(unique(w$cell));w$cell_index<-match(w$cell,cells)
+ w<-do.call(rbind,weight_rows)
+ totals<-aggregate(fraction~footprint+city_id+cell,w,sum);bad<-totals[totals$fraction>1+1e-7,];corrections<-list()
+ if(nrow(bad))for(label in unique(bad$footprint)){
+  saved_source<-readRDS(file.path(out,'geometry_checkpoints',paste0(label,'_source.rds')))
+  for(city in unique(bad$city_id[bad$footprint==label])){
+   i<-match(city,cities$city_id);cgeom<-city_native[i];ix<-saved_source$hits[[i]]
+   rr<-st_union(st_make_valid(st_set_crs(saved_source$pieces[ix],NA)))
+   rec<-suppressWarnings(st_intersection(cgeom,rr));non<-suppressWarnings(st_difference(cgeom,st_union(rec)))
+   polygons<-list(RECLAIMED=rec,OTHER_URBAN=non)
+   bad_cells<-bad$cell[bad$footprint==label&bad$city_id==city]
+   affected<-which(w$footprint==label&w$city_id==city&w$cell%in%bad_cells)
+   for(j in affected){xy<-xyFromCell(template,w$cell[j]);dx<-res(template)[1]/2;dy<-res(template)[2]/2
+    box<-st_sfc(st_polygon(list(rbind(c(xy[1]-dx,xy[2]-dy),c(xy[1]+dx,xy[2]-dy),c(xy[1]+dx,xy[2]+dy),c(xy[1]-dx,xy[2]+dy),c(xy[1]-dx,xy[2]-dy)))))
+    actual<-area(suppressWarnings(st_intersection(polygons[[w$zone[j]]],box)))/area(box)
+    stopifnot(is.finite(actual),actual>=0,actual<=1+1e-8)
+    corrections[[length(corrections)+1L]]<-data.frame(footprint=label,city_id=city,zone=w$zone[j],cell=w$cell[j],original_fraction=w$fraction[j],geos_fraction=actual)
+    w$fraction[j]<-min(1,actual);w$weight_km2[j]<-w$fraction[j]*rowarea[rowFromCell(template,w$cell[j])]
+   }
+  }
+ }
+ if(length(corrections))write_table(do.call(rbind,corrections),'fraction_corrections.csv')
+ w<-w[w$fraction>0&w$weight_km2>0,];cells<-sort(unique(w$cell));w$cell_index<-match(w$cell,cells)
  totals<-aggregate(fraction~footprint+city_id+cell,w,sum);stopifnot(all(totals$fraction<=1+1e-7))
  saveRDS(list(weights=w,cells=cells,xy=xyFromCell(template,cells),grid_path=cfg$surfaces[[1]]),file.path(out,'support.rds'))
  write_table(do.call(rbind,geometry_rows),'city_geometry_status.csv');write_table(do.call(rbind,sources),'geometry_sources.csv')
