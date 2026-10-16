@@ -124,21 +124,31 @@ if(phase=='extract'){
  paths<-unique(inputs$path[inputs$exists]);values<-vector('list',length(paths));stats<-vector('list',length(paths));names(values)<-paths
  reference<-rast(support$grid_path)
  dir.create(file.path(out,'input_cells'),showWarnings=FALSE)
- inspect_input<-function(i){
-  path<-paths[i];r<-rast(path);stopifnot(nlyr(r)==1L,compareGeom(reference,r,stopOnError=FALSE))
+ process_input<-function(i){
+  path<-paths[i]
   cache<-file.path(out,'input_cells',paste0(digest(path,algo='sha256'),'.rds'))
-  if(file.exists(cache))return(readRDS(cache))
+  if(file.exists(cache)){
+   saved<-readRDS(cache);stopifnot(length(saved$value)==length(cells),saved$metadata$path==path,saved$metadata$file_bytes==file.info(path)$size)
+   return(saved)
+  }
+  r<-rast(path);stopifnot(nlyr(r)==1L,compareGeom(reference,r,stopOnError=FALSE))
   v<-read_cells(path,xy);mm<-minmax(r)
   if(any(!is.finite(mm)))mm<-as.numeric(global(r,c('min','max'),na.rm=TRUE)[1,])
-  lo<-as.numeric(mm[1]);hi<-as.numeric(mm[2]);stopifnot(is.finite(lo),is.finite(hi))
+  lo<-as.numeric(mm[1]);hi<-as.numeric(mm[2]);finite_range<-is.finite(lo)&&is.finite(hi)
+  if(!finite_range){stopifnot(!any(is.finite(v)));lo<-hi<-NA_real_}
   ans<-list(value=v,metadata=data.frame(path=path,minimum=lo,maximum=hi,datatype=datatype(r),sample_finite=sum(is.finite(v)),sample_zero=sum(v==0,na.rm=TRUE),binary_filename=grepl('TSSbin',path),file_bytes=file.info(path)$size,modified_utc=format(file.info(path)$mtime,tz='UTC',usetz=TRUE),sample_sha256=digest(v,algo='sha256')))
   saveRDS(ans,cache)
-  if(i%%25==0L){cat('Input',i,'of',length(paths),'\n');flush.console()}
+  if(i%%25==0L){cat('Input',i,'of',length(paths),'\n');flush.console();gc()}
   ans
  }
+ inspect_input<-function(i)tryCatch(process_input(i),error=function(e){cat('INPUT_ERROR',paths[i],conditionMessage(e),'\n');flush.console();list(input_error=conditionMessage(e),path=paths[i])})
  workers<-if(is.null(cfg$workers))1L else as.integer(cfg$workers)
  inspected<-parallel::mclapply(seq_along(paths),inspect_input,mc.cores=workers,mc.preschedule=TRUE)
- stopifnot(!any(vapply(inspected,inherits,logical(1),'try-error')))
+ errors<-vapply(inspected,function(z)inherits(z,'try-error')||!is.null(z$input_error),logical(1))
+ if(any(errors)){
+  err<-lapply(which(errors),function(i)data.frame(path=paths[i],error=if(inherits(inspected[[i]],'try-error'))as.character(inspected[[i]])else inspected[[i]]$input_error))
+  write_table(do.call(rbind,err),'input_errors.csv');stop('Input errors recorded; valid input-cell caches retained')
+ }
  values<-lapply(inspected,`[[`,'value');names(values)<-paths;stats<-lapply(inspected,`[[`,'metadata');rm(inspected)
  stats<-do.call(rbind,stats);write_table(stats,'raster_input_metadata.csv')
  variants<-list();rules<-list();denominators<-list()
@@ -148,7 +158,7 @@ if(phase=='extract'){
    total<-numeric(length(cells));count<-integer(length(cells))
    for(j in seq_len(nrow(q))){v<-values[[q$path[j]]];ok<-is.finite(v);meta<-stats[match(q$path[j],stats$path),]
     if(normalization=='SCALE'){if(grepl('TSSbin',q$path[j]))v<-v else v<-v/1000
-    }else v<-if(meta$maximum==meta$minimum)v*0 else(v-meta$minimum)/(meta$maximum-meta$minimum)
+    }else v<-if(!is.finite(meta$maximum)||!is.finite(meta$minimum)||meta$maximum==meta$minimum)v*0 else(v-meta$minimum)/(meta$maximum-meta$minimum)
     total[ok]<-total[ok]+v[ok];count[ok]<-count[ok]+1L
    }
    value<-if(denominator=='AVAILABLE')ifelse(count>0,total/count,NA_real_)else total/nrow(q)

@@ -7,7 +7,7 @@ sets<-list(FULL_ALL_PAIRED_ROUTES=data.frame(species=roster$species,path=roster$
 set.seed(cfg$seed+3);ix<-sort(sample.int(length(s$cells),min(50L,length(s$cells))));max_sum_error<-0
 for(set in names(sets)){
  q<-sets[[set]];raw<-matrix(NA_real_,length(ix),nrow(q));normalized<-raw
- for(j in seq_len(nrow(q))){cache<-readRDS(file.path(out,'input_cells',paste0(digest(q$path[j],algo='sha256'),'.rds')));raw[,j]<-cache$value[ix];mm<-cache$metadata;normalized[,j]<-if(mm$maximum==mm$minimum)raw[,j]*0 else(raw[,j]-mm$minimum)/(mm$maximum-mm$minimum)}
+ for(j in seq_len(nrow(q))){cache<-readRDS(file.path(out,'input_cells',paste0(digest(q$path[j],algo='sha256'),'.rds')));raw[,j]<-cache$value[ix];mm<-cache$metadata;normalized[,j]<-if(!is.finite(mm$maximum)||!is.finite(mm$minimum)||mm$maximum==mm$minimum)raw[,j]*0 else(raw[,j]-mm$minimum)/(mm$maximum-mm$minimum)}
  for(norm in c('SCALE','MINMAX')){
   value<-if(norm=='SCALE')raw/1000 else normalized;p<-aligned$products[[paste(set,norm,sep='__')]]
   count<-rowSums(is.finite(value));fixed<-rowSums(replace(value,!is.finite(value),0))/ncol(value);available<-rowMeans(value,na.rm=TRUE)

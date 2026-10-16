@@ -29,6 +29,11 @@ Binary filenames and metadata ranges are reported. The scale recipe divides
 continuous BIOMOD predictions by 1000 and retains binary values on their native
 scale. Min-max uses each raster's global metadata extrema, calculating global
 extrema if unavailable; constant rasters contribute zero where finite.
+All-missing rasters remain in the input roster: they supply no valid cells to
+available-species means and zero to fixed-denominator means. Their absent global
+extrema are retained in the metadata rather than interpreted as a processing
+failure. Per-file errors are recorded and successful extraction caches survive
+an interrupted extraction.
 Available-species means and fixed-denominator means with missing values replaced
 by zero are both computed. A separate reconstruction reproduces the stored
 paired products' joint finite-species membership. No native-range mask is

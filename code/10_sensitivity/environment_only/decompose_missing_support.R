@@ -14,7 +14,7 @@ aligned<-list()
 for(set in names(extra))for(normalization in c('SCALE','MINMAX')){
  q<-extra[[set]];total<-numeric(length(s$cells));count<-integer(length(s$cells))
  for(j in seq_len(nrow(q))){path<-q$path[j];cache<-readRDS(file.path(out,'input_cells',paste0(digest(path,algo='sha256'),'.rds')));v<-cache$value;mm<-cache$metadata;ok<-is.finite(v)
-  if(normalization=='SCALE')v<-v/1000 else v<-if(mm$maximum==mm$minimum)v*0 else (v-mm$minimum)/(mm$maximum-mm$minimum)
+  if(normalization=='SCALE')v<-v/1000 else v<-if(!is.finite(mm$maximum)||!is.finite(mm$minimum)||mm$maximum==mm$minimum)v*0 else (v-mm$minimum)/(mm$maximum-mm$minimum)
   total[ok]<-total[ok]+v[ok];count[ok]<-count[ok]+1L
  }
  base<-paste(set,normalization,sep='__');fixed_label<-paste0(base,'__ZERO_FIXED');av_label<-paste0(base,'__AVAILABLE')
