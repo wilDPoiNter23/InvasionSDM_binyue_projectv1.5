@@ -1,13 +1,19 @@
 # Compare saved multispecies surfaces under controlled aggregation changes.
 suppressPackageStartupMessages({library(terra);library(sf);library(jsonlite);library(digest)})
 a<-commandArgs(TRUE);stopifnot(length(a)==2L);cfg<-fromJSON(a[1]);phase<-a[2];out<-cfg$output_root
+script_arg<-grep('^--file=',commandArgs(FALSE),value=TRUE)
+source(file.path(dirname(sub('^--file=','',script_arg)),'..','nested_spatial_contrasts','common_land_baseline_geometry.R'))
 sf_use_s2(FALSE);key<-function(x)tolower(trimws(x))
 write_table<-function(x,name)write.csv(x,file.path(out,name),row.names=FALSE)
-area<-function(x){if(!length(x)||all(st_is_empty(x)))return(0);sum(as.numeric(st_area(x)))}
+area<-common_polygon_area
 native<-function(x,cr){st_set_crs(st_transform(st_geometry(x),cr),NA)}
 read_cells<-function(path,xy){r<-rast(path);stopifnot(nlyr(r)==1L);d<-extract(r,xy);as.numeric(d[[ncol(d)]])}
 if(phase=='prepare'){
- stopifnot(!dir.exists(out));dir.create(out,recursive=TRUE);dir.create(file.path(out,'tmp'))
+ stopifnot(!file.exists(file.path(out,'prepare_receipt.json')))
+ dir.create(out,recursive=TRUE,showWarnings=FALSE);dir.create(file.path(out,'tmp'),showWarnings=FALSE)
+ dir.create(file.path(out,'geometry_checkpoints'),showWarnings=FALSE)
+ config_hash<-digest(file=a[1],algo='sha256');hash_path<-file.path(out,'preparation_config_sha256.txt')
+ if(file.exists(hash_path))stopifnot(identical(readLines(hash_path),config_hash))else writeLines(config_hash,hash_path)
  terraOptions(tempdir=file.path(out,'tmp'),memfrac=.2,progress=0)
  cities<-st_read(cfg$cities,quiet=TRUE);cities$city_id<-as.character(cities[[cfg$city_id]])
  stopifnot(!anyDuplicated(key(cities$city_id)))
@@ -17,14 +23,22 @@ if(phase=='prepare'){
  rowarea<-as.numeric(values(cellSize(stripe,unit='km',mask=FALSE)))
  sources<-list();geometry_rows<-list();weight_rows<-list();k<-0L
  for(label in names(cfg$reclamation_sources)){
-  path<-cfg$reclamation_sources[[label]];raw<-st_read(path,quiet=TRUE)
-  raw<-st_transform(raw,cr);pieces<-suppressWarnings(st_cast(st_geometry(raw),'POLYGON'))
-  hits<-st_intersects(st_geometry(city_geom),pieces)
-  sources[[label]]<-data.frame(role=label,path=path,sha256=digest(file=path,algo='sha256'),features=nrow(raw),components=length(pieces))
+  path<-cfg$reclamation_sources[[label]];shape_cache<-file.path(out,'geometry_checkpoints',paste0(label,'_source.rds'))
+  if(file.exists(shape_cache)){saved<-readRDS(shape_cache);pieces<-saved$pieces;hits<-saved$hits;sources[[label]]<-saved$source}else{
+   raw<-st_read(path,quiet=TRUE);raw<-st_transform(raw,cr);pieces<-suppressWarnings(st_cast(st_geometry(raw),'POLYGON'))
+   hits<-st_intersects(st_geometry(city_geom),pieces)
+   sources[[label]]<-data.frame(role=label,path=path,sha256=digest(file=path,algo='sha256'),features=nrow(raw),components=length(pieces))
+   saveRDS(list(pieces=pieces,hits=hits,source=sources[[label]]),shape_cache,compress=FALSE)
+  }
   for(i in seq_len(nrow(cities))){city<-cities$city_id[i]
+   checkpoint<-file.path(out,'geometry_checkpoints',sprintf('%s_city_%03d.rds',label,i))
+   if(file.exists(checkpoint)){saved<-readRDS(checkpoint);stopifnot(saved$city_id==city)
+    geometry_rows<-c(geometry_rows,saved$rows);weight_rows<-c(weight_rows,saved$weights);k<-length(weight_rows);next
+   }
    if(key(city)%in%key(cfg$exclude_city_keys)){
     geometry_rows[[length(geometry_rows)+1L]]<-data.frame(footprint=label,city_id=city,zone='BOTH',status='AUTHOR_EXCLUSION',geometry_area_km2=NA_real_,reason='Previously requested city exclusion');next
    }
+   row_start<-length(geometry_rows);weight_start<-length(weight_rows)
    result<-tryCatch({
     cgeom<-city_native[i];ix<-hits[[i]]
     if(length(ix)){
@@ -39,7 +53,7 @@ if(phase=='prepare'){
      if(!length(z)){
       geometry_rows[[length(geometry_rows)+1L]]<-data.frame(footprint=label,city_id=city,zone=zone,status='ZERO_GEOMETRY',geometry_area_km2=0,reason='No positive polygon area');next
      }
-     z<-st_union(z);zcr<-st_set_crs(z,cr)
+     z<-suppressWarnings(st_collection_extract(z,'POLYGON'));z<-st_union(z);zcr<-st_set_crs(z,cr)
      e<-extract(template,vect(zcr),exact=TRUE,cells=TRUE)
      e<-e[is.finite(e$cell)&is.finite(e$fraction)&e$fraction>0,,drop=FALSE]
      bad<-which(e$fraction>1)
@@ -52,6 +66,9 @@ if(phase=='prepare'){
      geometry_rows[[length(geometry_rows)+1L]]<-data.frame(footprint=label,city_id=city,zone=zone,status=if(nrow(e))'PREPARED'else'NO_GRID_OVERLAP',geometry_area_km2=area(st_transform(zcr,6933))/1e6,reason='')
     };TRUE
    },error=function(err){geometry_rows[[length(geometry_rows)+1L]]<<-data.frame(footprint=label,city_id=city,zone='BOTH',status='GEOMETRY_ERROR',geometry_area_km2=NA_real_,reason=conditionMessage(err));FALSE})
+   new_rows<-if(length(geometry_rows)>row_start)geometry_rows[seq.int(row_start+1L,length(geometry_rows))]else list()
+   new_weights<-if(length(weight_rows)>weight_start)weight_rows[seq.int(weight_start+1L,length(weight_rows))]else list()
+   if(result)saveRDS(list(city_id=city,rows=new_rows,weights=new_weights),checkpoint)
    write_table(do.call(rbind,geometry_rows),'city_geometry_status.csv')
    cat(label,city,result,'\n');flush.console()
   }
@@ -75,6 +92,7 @@ if(phase=='extract'){
  sets<-list()
  sets$HISTORICAL_SELECTED<-data.frame(species=original$accepted_taxon,path=original$original_projection_path)
  sets$HISTORICAL_CONTINUOUS<-data.frame(species=original$accepted_taxon,path=vapply(original$original_projection_path,continuous,character(1)))
+ sets$ALL_FULL_SELECTED<-data.frame(species=inventory$accepted_taxon,path=inventory$baseline_global_projection_path)
  sets$ALL_FULL_CONTINUOUS<-data.frame(species=inventory$accepted_taxon,path=vapply(inventory$baseline_global_projection_path,continuous,character(1)))
  sets$PAIRED_FULL<-data.frame(species=paired$species,path=paired$full_projection)
  sets$PAIRED_ENV<-data.frame(species=paired$species,path=paired$env_projection)
@@ -155,6 +173,10 @@ if(phase=='summarise'){
  # Compare each reconstruction directly with the historical surface at identical cells.
  original<-d$values[[cfg$historical_surface_label]];concordance<-lapply(names(d$values),function(label){v<-d$values[[label]];ok<-is.finite(v)&is.finite(original);delta<-v[ok]-original[ok];data.frame(variant=label,cells=sum(ok),mae=mean(abs(delta)),maximum_absolute_error=max(abs(delta)),correlation=cor(v[ok],original[ok]),historical_missing_rebuilt_finite=sum(!is.finite(original)&is.finite(v)),historical_zero_rebuilt_positive=sum(original==0&v>0,na.rm=TRUE))})
  write_table(do.call(rbind,concordance),'historical_surface_concordance.csv')
+ if('STORED_GLOBAL_814'%in%names(d$values)){
+  rebuilt<-d$values$ALL_FULL_SELECTED__MINMAX__ZERO_FIXED;stored<-d$values$STORED_GLOBAL_814;ok<-is.finite(rebuilt)&is.finite(stored)
+  write_table(data.frame(stored='STORED_GLOBAL_814',reconstruction='ALL_FULL_SELECTED__MINMAX__ZERO_FIXED',cells=sum(ok),finite_coverage_identical=identical(is.finite(rebuilt),is.finite(stored)),mae=mean(abs(rebuilt[ok]-stored[ok])),maximum_absolute_error=max(abs(rebuilt[ok]-stored[ok])),correlation=cor(rebuilt[ok],stored[ok])),'stored_surface_reconstruction.csv')
+ }
  write_json(list(status='COMPUTED',no_sdm_fitting=TRUE,variants=length(d$values),native_cells=length(cells),support_sha256=digest(file=file.path(out,'support.rds'),algo='sha256'),values_sha256=digest(file=file.path(out,'cell_values.rds'),algo='sha256')),file.path(out,'comparison_receipt.json'),auto_unbox=TRUE,pretty=TRUE)
  quit()
 }

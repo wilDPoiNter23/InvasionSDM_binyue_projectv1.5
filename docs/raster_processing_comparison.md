@@ -21,7 +21,8 @@ Zero geometry, absent model coverage and explicit author exclusions remain in
 the coverage tables. Each surface supplies its own finite modeled area.
 
 The retained original species inputs, their continuous counterparts, all FULL
-inventory species, paired FULL and paired ENV are processed separately. Every
+inventory species with selected and continuous input versions, paired FULL and
+paired ENV are processed separately. Every
 available member is retained and missing input members are listed. A result
 with an incomplete input set is not an exact reconstruction of that set.
 Binary filenames and metadata ranges are reported. The scale recipe divides
