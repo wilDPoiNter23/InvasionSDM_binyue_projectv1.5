@@ -48,4 +48,10 @@ The frozen inventory and completion records are trusted inputs; file presence al
 
 ## Comparison and interpretation
 
+The [saved-surface processing comparison](../../../docs/raster_processing_comparison.md)
+separates selected versus continuous inputs, normalization, missing-data coverage,
+species denominators and full-roster versus paired-roster composition. It reuses
+saved predictions and assesses every supplied city boundary. A separate coverage
+diagnostic retains the historical scores while changing only prediction support.
+
 Global correlation, MAE, RMSE and means use finite paired raster cells with equal cell weights. They are not geographic-area-weighted statistics. City means use exact cell-overlap fractions normalized over finite coverage within the final city polygons. Invalid input geometries are repaired in memory with terra::makeValid for both groups; source polygon files remain unchanged and the summary records the repair count. Mean difference is ENV minus FULL. The city-level GAM retains the existing tensor interaction, smooth covariates, basis sizes and REML fitting. Its area scan compares fitted endpoint differences at the original city-area quantiles; it does not estimate a new exact scale threshold. Outputs are descriptive sensitivity results, not causal estimates.

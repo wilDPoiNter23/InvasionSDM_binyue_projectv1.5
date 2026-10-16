@@ -1,6 +1,6 @@
 # Numerical regression checks for missing-value, binary and city-coverage rules.
 suppressPackageStartupMessages({library(terra);library(sf);library(jsonlite)})
-a<-commandArgs(TRUE);stopifnot(length(a)%in%c(1L,2L,3L));script<-normalizePath(a[1],mustWork=TRUE)
+a<-commandArgs(TRUE);stopifnot(length(a)%in%1:4);script<-normalizePath(a[1],mustWork=TRUE)
 root<-tempfile('processing_');dir.create(root)
 r<-rast(nrows=2,ncols=6,xmin=0,xmax=6,ymin=0,ymax=2,crs='EPSG:4326')
 f1<-c(NA,600,NA,700,100,NA,800,600,NA,700,100,NA)
@@ -41,5 +41,6 @@ if(length(a)>=2L){stopifnot(system2(exe,c(shQuote(normalizePath(a[2],mustWork=TR
  z<-read.csv(file.path(cfg$output_root,'missing_support_decomposition.csv'));z<-z[z$base_variant=='PAIRED_FULL__SCALE__ZERO_FIXED'&z$city_scope=='SAME_COMPUTABLE_CITIES',]
  stopifnot(z$difference[z$stage=='ZERO_FIXED']<0,z$difference[z$stage=='ZERO_FIXED_MODELED_SUPPORT']>0,z$difference[z$stage=='AVAILABLE']>0)
 }
-if(length(a)==3L)stopifnot(system2(exe,c(shQuote(normalizePath(a[3],mustWork=TRUE)),shQuote(cp)))==0)
+if(length(a)>=3L)stopifnot(system2(exe,c(shQuote(normalizePath(a[3],mustWork=TRUE)),shQuote(cp)))==0)
+if(length(a)==4L)stopifnot(system2(exe,c(shQuote(normalizePath(a[4],mustWork=TRUE)),shQuote(cp)))==0)
 cat('PASS: binary selection, global normalization, missing-value denominators, joint membership and all-city geometry\n')

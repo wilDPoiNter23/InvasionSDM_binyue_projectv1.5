@@ -51,3 +51,10 @@ of all-missing grid cells from the denominator used where some species have
 predictions. It reports each recipe's available city sample and an additional
 comparison on all cities computable under both recipes. The latter isolates
 processing steps; it never selects a historical fixed city list.
+
+`compare_archived_coverage.R CONFIG` additionally applies saved prediction
+coverage to the historical aggregate without changing any retained historical
+score. It reports excluded area and the amount of excluded area that originally
+had a positive score, alongside separate complete-FULL and paired reference
+masks. This coverage-only diagnostic is separate from the primary independently
+computed means and does not introduce a fixed city sample.
