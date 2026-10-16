@@ -30,7 +30,7 @@ if(phase=='prepare'){
     if(length(ix)){
      rr<-st_make_valid(st_set_crs(pieces[ix],NA));rr<-st_union(rr)
      rec<-suppressWarnings(st_intersection(cgeom,rr));rec<-rec[!st_is_empty(rec)&st_dimension(rec)==2L]
-    }else rec<-st_sfc(crs=NA)
+    }else rec<-st_sfc()
     non<-if(length(rec))suppressWarnings(st_difference(cgeom,st_union(rec)))else cgeom
     both<-list(RECLAIMED=rec,OTHER_URBAN=non)
     stopifnot(abs(area(rec)+area(non)-area(cgeom))<=max(1e-12,area(cgeom)*1e-7))
@@ -52,6 +52,7 @@ if(phase=='prepare'){
      geometry_rows[[length(geometry_rows)+1L]]<-data.frame(footprint=label,city_id=city,zone=zone,status=if(nrow(e))'PREPARED'else'NO_GRID_OVERLAP',geometry_area_km2=area(st_transform(zcr,6933))/1e6,reason='')
     };TRUE
    },error=function(err){geometry_rows[[length(geometry_rows)+1L]]<<-data.frame(footprint=label,city_id=city,zone='BOTH',status='GEOMETRY_ERROR',geometry_area_km2=NA_real_,reason=conditionMessage(err));FALSE})
+   write_table(do.call(rbind,geometry_rows),'city_geometry_status.csv')
    cat(label,city,result,'\n');flush.console()
   }
  }
