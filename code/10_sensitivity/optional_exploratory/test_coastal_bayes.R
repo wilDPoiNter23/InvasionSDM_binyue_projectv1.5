@@ -1,0 +1,12 @@
+# Check the sampler against a known Gaussian posterior and crossed simulation.
+a<-commandArgs(TRUE);stopifnot(length(a)==1L)
+source(file.path(a[1],'coastal_bayes_core.R'))
+set.seed(34);n<-120;X<-cbind(1,rnorm(n));y<-drop(X%*%c(.3,.7))+rnorm(n,sd=.6)
+V<-solve(crossprod(X)/.36+diag(1/4,2));m<-drop(V%*%crossprod(X,y)/.36)
+z<-coastal_gibbs(X,y,list(),warmup=1000L,samples=6000L,thin=1L,seed=84L,fixed_variance=.36)
+stopifnot(max(abs(colMeans(z$beta)-m))<.025,max(abs(cov(z$beta)-V))<.003)
+set.seed(90);city<-rep(1:20,each=24);sp<-rep(1:12,40);zone<-rep(1:80,each=6)
+X<-cbind(1,rnorm(480));y<-drop(X%*%c(-.5,.4))+rnorm(20,0,.3)[city]+rnorm(12,0,.3)[sp]+rnorm(80,0,.2)[zone]+rnorm(480,0,.2)
+z<-coastal_gibbs(X,y,list(city,sp,zone),warmup=1500L,samples=4000L,thin=2L,seed=86L)
+q<-quantile(z$beta[,2],c(.025,.975));stopifnot(q[1]<.4,q[2]>.4,all(is.finite(z$beta)))
+cat('PASS_ANALYTICAL_POSTERIOR_AND_CROSSED_SIMULATION\n')
