@@ -2,6 +2,27 @@
 suppressPackageStartupMessages({library(jsonlite);library(digest)})
 a<-commandArgs(TRUE);stopifnot(length(a)==1L);cfg<-fromJSON(a[1]);out<-cfg$output_root
 s<-readRDS(file.path(out,'support.rds'));d<-readRDS(file.path(out,'cell_values.rds'));rules<-read.csv(file.path(out,'processing_rules.csv'))
+inputs<-read.csv(file.path(out,'species_inputs.csv'));metadata<-read.csv(file.path(out,'raster_input_metadata.csv'));paired<-read.csv(cfg$paired_manifest)
+full<-inputs[inputs$set=='ALL_FULL_CONTINUOUS',c('species','path','exists')]
+stopifnot(!anyDuplicated(full$species),all(full$exists),all(paired$species%in%full$species))
+roster<-merge(full,paired[,c('species','full_projection')],by='species',all.x=TRUE)
+roster$aligned_path<-ifelse(is.na(roster$full_projection),roster$path,roster$full_projection)
+roster$source_replaced<-roster$path!=roster$aligned_path
+write.csv(roster,file.path(out,'full_source_alignment.csv'),row.names=FALSE)
+extra<-list(BASELINE_FULL_PAIRED_ROSTER=full[match(paired$species,full$species),c('species','path')],FULL_ALL_PAIRED_ROUTES=data.frame(species=roster$species,path=roster$aligned_path))
+aligned<-list()
+for(set in names(extra))for(normalization in c('SCALE','MINMAX')){
+ q<-extra[[set]];total<-numeric(length(s$cells));count<-integer(length(s$cells))
+ for(j in seq_len(nrow(q))){path<-q$path[j];cache<-readRDS(file.path(out,'input_cells',paste0(digest(path,algo='sha256'),'.rds')));v<-cache$value;mm<-cache$metadata;ok<-is.finite(v)
+  if(normalization=='SCALE')v<-v/1000 else v<-if(mm$maximum==mm$minimum)v*0 else (v-mm$minimum)/(mm$maximum-mm$minimum)
+  total[ok]<-total[ok]+v[ok];count[ok]<-count[ok]+1L
+ }
+ base<-paste(set,normalization,sep='__');fixed_label<-paste0(base,'__ZERO_FIXED');av_label<-paste0(base,'__AVAILABLE')
+ d$values[[fixed_label]]<-total/nrow(q);d$values[[av_label]]<-ifelse(count>0,total/count,NA_real_);d$counts[[fixed_label]]<-count;d$counts[[av_label]]<-count
+ rules<-rbind(rules,data.frame(variant=fixed_label,species_set=set,normalization=normalization,denominator='ZERO_FIXED',requested_species=nrow(q),available_species=nrow(q),complete_input_set=TRUE,native_range_mask='No additional native-range mask introduced'))
+ aligned[[base]]<-list(fixed=total/nrow(q),available=d$values[[av_label]],count=count,species=nrow(q))
+}
+saveRDS(list(cells=s$cells,products=aligned),file.path(out,'aligned_full_cell_values.rds'))
 weights<-s$weights;groups<-split(seq_len(nrow(weights)),interaction(weights$footprint,weights$city_id,weights$zone,drop=TRUE))
 source<-list();k<-0L
 for(label in rules$variant[rules$denominator=='ZERO_FIXED']){
@@ -28,4 +49,4 @@ for(label in unique(z$base_variant))for(foot in unique(z$footprint)){
  }
 }
 write.csv(do.call(rbind,results),file.path(out,'missing_support_decomposition.csv'),row.names=FALSE)
-write_json(list(status='COMPUTED',cell_values_sha256=digest(file=file.path(out,'cell_values.rds'),algo='sha256'),steps=c('Fixed denominator with all missing cells treated as zero','Same fixed denominator with all-missing cells retained as missing','Available-species denominator on modeled cells'),city_scope='Each recipe is reported on all computable cities; a separate same-computable-city comparison isolates cell processing without freezing a historical city list'),file.path(out,'missing_support_receipt.json'),auto_unbox=TRUE,pretty=TRUE)
+write_json(list(status='COMPUTED',cell_values_sha256=digest(file=file.path(out,'cell_values.rds'),algo='sha256'),aligned_values_sha256=digest(file=file.path(out,'aligned_full_cell_values.rds'),algo='sha256'),full_species=nrow(full),paired_species=nrow(paired),full_sources_replaced=sum(roster$source_replaced),steps=c('Fixed denominator with all missing cells treated as zero','Same fixed denominator with all-missing cells retained as missing','Available-species denominator on modeled cells'),city_scope='Each recipe is reported on all computable cities; a separate same-computable-city comparison isolates cell processing without freezing a historical city list'),file.path(out,'missing_support_receipt.json'),auto_unbox=TRUE,pretty=TRUE)
