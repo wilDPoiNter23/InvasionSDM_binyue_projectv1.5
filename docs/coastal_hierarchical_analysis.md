@@ -39,8 +39,9 @@ Dependencies are sf, terra, jsonlite, digest, Rcpp and a C++ compiler.
 For mean suitability S, the response is logit((S+epsilon)/(1+2epsilon)).
 Fixed effects are within-city cohort age in five-year units, city mean cohort
 age, land use and standardised log zone area. City and nested zone intercepts
-are crossed with species intercepts. Fixed coefficients have normal(0,2) priors.
-Residual and group variances have inverse-gamma(shape=2,rate=1) priors.
+are crossed with species intercepts. Fixed coefficients have normal priors with
+mean 0 and SD 2. Residual and group precisions have gamma(shape=2,rate=1) priors,
+equivalent to inverse-gamma priors on the corresponding variances.
 
 Four independent Gibbs chains use exact Gaussian and inverse-gamma conditional
 updates. Joint coefficient/intercept shifts preserve the likelihood while

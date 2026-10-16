@@ -321,8 +321,8 @@ sampler lengths, seed and external output root.
 The Gaussian response is logit((suitability+epsilon)/(1+2*epsilon)). Fixed terms
 are cohort age centred within city, city mean cohort age, land use and scaled
 log zone area. Random intercepts represent cities, zones nested within cities,
-and species crossed with cities. Fixed coefficients have normal(0,2) priors;
-residual and group variances have inverse-gamma(shape=2,rate=1) priors.
+and species crossed with cities. Fixed coefficients have normal priors with
+mean 0 and SD 2; residual and group precisions have gamma(shape=2,rate=1) priors.
 Four independent Gibbs chains use exact scalar Gaussian and inverse-gamma
 conditionals. A likelihood-preserving conditional intercept shift improves
 mixing. The primary epsilon is0.0005; separate prior and epsilon sensitivities
