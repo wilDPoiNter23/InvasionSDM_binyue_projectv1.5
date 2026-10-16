@@ -21,6 +21,14 @@ coastal_compile<-function(){
  else for(int k=0;k<p;k++)if(std::abs(ZX(j,k)-X(i,k))>1e-10)blocked=false;}
  Rcpp::NumericMatrix ZTZ(p,p);
  if(blocked)for(int k=0;k<p;k++)for(int l=0;l<p;l++)for(int j=0;j<Jz;j++)ZTZ(k,l)+=ZX(j,k)*ZX(j,l);
+ int Jc=G>0?u[0].size():0;Rcpp::NumericMatrix CX(Jc,p);
+ std::vector<int> cseen(Jc,0),constant(p,1),cc;
+ if(blocked){for(int i=0;i<n;i++){int j=ids[0][i];
+ if(!cseen[j]){for(int k=0;k<p;k++)CX(j,k)=X(i,k);cseen[j]=1;}
+ else for(int k=0;k<p;k++)if(std::abs(CX(j,k)-X(i,k))>1e-10)constant[k]=0;}
+ for(int k=0;k<p;k++)if(constant[k])cc.push_back(k);}
+ int pc=cc.size();Rcpp::NumericMatrix CTX(pc,pc);
+ for(int k=0;k<pc;k++)for(int l=0;l<pc;l++)for(int j=0;j<Jc;j++)CTX(k,l)+=CX(j,cc[k])*CX(j,cc[l]);
  double sigma=fixed_variance>0?fixed_variance:1.0;
  Rcpp::NumericMatrix B(S,p),V(S,G+1);
  int row=0;double bp=1.0/(prior_scale*prior_scale);
@@ -40,6 +48,14 @@ coastal_compile<-function(){
  b[0]+=shift;for(int j=0;j<J;j++)u[g][j]-=shift;
  double ss=0;for(int j=0;j<J;j++)ss+=u[g][j]*u[g][j];
  tau[g]=1.0/R::rgamma(2.0+J/2.0,1.0/(variance_rate+ss/2.0));}
+ // City-constant coefficients need a city-level joint shift as well.
+ if(blocked && pc>0){Rcpp::NumericMatrix L(pc,pc);Rcpp::NumericVector h(pc),v(pc),mean(pc),noise(pc),delta(pc);
+ for(int k=0;k<pc;k++){h[k]=-b[cc[k]]*bp;for(int j=0;j<Jc;j++)h[k]+=CX(j,cc[k])*u[0][j]/tau[0];
+ for(int l=0;l<=k;l++){double t=CTX(k,l)/tau[0]+(k==l?bp:0);
+ for(int q=0;q<l;q++)t-=L(k,q)*L(l,q);L(k,l)=k==l?std::sqrt(t):t/L(l,l);}}
+ for(int k=0;k<pc;k++){double t=h[k];for(int l=0;l<k;l++)t-=L(k,l)*v[l];v[k]=t/L(k,k);noise[k]=R::rnorm(0,1);}
+ for(int k=pc-1;k>=0;k--){double m=v[k],r=noise[k];for(int l=k+1;l<pc;l++){m-=L(l,k)*mean[l];r-=L(l,k)*noise[l];}mean[k]=m/L(k,k);noise[k]=r/L(k,k);delta[k]=mean[k]+noise[k];b[cc[k]]+=delta[k];}
+ for(int j=0;j<Jc;j++){double t=0;for(int k=0;k<pc;k++)t+=CX(j,cc[k])*delta[k];u[0][j]-=t;}}
  // Joint fixed-effect and zone shift: the observation likelihood is invariant.
  if(blocked){Rcpp::NumericMatrix L(p,p);Rcpp::NumericVector h(p),v(p),mean(p),noise(p),delta(p);
  for(int k=0;k<p;k++){h[k]=-b[k]*bp;for(int j=0;j<Jz;j++)h[k]+=ZX(j,k)*u[G-1][j]/tau[G-1];

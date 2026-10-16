@@ -17,3 +17,7 @@ stopifnot(max(abs(colMeans(ordinary$beta)-colMeans(blocked$beta)))<.04,
  abs(sd(ordinary$beta[,2])-sd(blocked$beta[,2]))<.02,
  isTRUE(blocked$blocked_zone_shift),!ordinary$blocked_zone_shift)
 cat('PASS_BLOCKED_AND_COORDINATE_POSTERIOR_AGREEMENT\n')
+set.seed(94);X<-cbind(1,rep(rnorm(80),each=6),rep(rnorm(20),each=24));y<-drop(X%*%c(-.5,.4,-.3))+rnorm(20,0,.3)[city]+rnorm(12,0,.3)[sp]+rnorm(80,0,.2)[zone]+rnorm(480,0,.2)
+z<-coastal_gibbs(X,y,list(city,sp,zone),warmup=2000L,samples=8000L,thin=1L,seed=95L)
+stopifnot(quantile(z$beta[,3],.025)< -0.3,quantile(z$beta[,3],.975)> -0.3)
+cat('PASS_CITY_CONSTANT_COEFFICIENT_SIMULATION\n')
