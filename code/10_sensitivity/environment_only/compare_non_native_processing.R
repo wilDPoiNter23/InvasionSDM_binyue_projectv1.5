@@ -6,39 +6,60 @@ cfg <- fromJSON(args[1]); out <- cfg$output_root; base <- cfg$cached_comparison
 dir.create(out,recursive=TRUE,showWarnings=FALSE)
 sf_use_s2(FALSE)
 support <- readRDS(file.path(base,'support.rds'))
+source_cells<-length(support$cells);selection<-seq_len(source_cells)
+if(!is.null(cfg$pilot_cells))selection<-head(selection,as.integer(cfg$pilot_cells))
+support$cells<-support$cells[selection];support$xy<-support$xy[selection,,drop=FALSE]
+support$weights<-support$weights[support$weights$cell_index%in%selection,]
+support$weights$cell_index<-match(support$weights$cell_index,selection)
+support$source_indices<-selection
+saveRDS(support,file.path(out,'analysis_support.rds'))
 inputs <- read.csv(file.path(base,'species_inputs.csv'))
 full <- inputs[inputs$set=='ALL_FULL_CONTINUOUS',c('species','path')]
 paired <- read.csv(cfg$paired_manifest)
 stopifnot(nrow(full)==814L,!anyDuplicated(full$species),all(paired$species%in%full$species))
-template <- rast(support$grid_path); n <- length(support$cells); ns <- nrow(full)
+template <- if(is.null(cfg$grid_geometry))rast(support$grid_path)else do.call(rast,cfg$grid_geometry)
+stopifnot(max(abs(xyFromCell(template,support$cells)-support$xy))<1e-10)
+n <- length(support$cells); ns <- nrow(full)
 key <- function(x)tolower(gsub('[._]+',' ',trimws(x)))
 stopifnot(!anyDuplicated(key(full$species)))
 read_values <- function(path){
   z <- readRDS(file.path(base,'input_cells',paste0(digest(path,algo='sha256'),'.rds')))
-  stopifnot(z$metadata$path==path,z$metadata$file_bytes==file.info(path)$size,length(z$value)==n)
+  stopifnot(z$metadata$path==path,length(z$value)==source_cells)
+  if(isTRUE(cfg$cached_inputs_only))stopifnot(identical(z$metadata$sample_sha256,digest(z$value,algo='sha256')))else stopifnot(z$metadata$file_bytes==file.info(path)$size)
   mm <- z$metadata
   stopifnot(!grepl('TSSbin|TSSfilt',basename(path)))
   if(is.finite(mm$maximum))stopifnot(mm$minimum>=0,mm$maximum<=1000,mm$maximum>1)
-  v <- z$value/1000
+  v <- z$value[selection]/1000
   stopifnot(all(v[is.finite(v)]>=0 & v[is.finite(v)]<=1))
   list(value=v,metadata=mm)
 }
 mask_cache <- file.path(out,'native_cell_membership.rds')
-mask_hashes <- vapply(cfg$native_vectors,function(p)digest(file=p,algo='sha256'),character(1))
+mask_sources <- if(is.null(cfg$native_geometry_bundle))cfg$native_vectors else unlist(cfg$native_geometry_bundle)
+mask_hashes <- vapply(mask_sources,function(p)digest(file=p,algo='sha256'),character(1))
 if(file.exists(mask_cache)){
   masks <- readRDS(mask_cache)
   stopifnot(identical(masks$cells,support$cells),identical(masks$species,full$species),identical(masks$vector_sha256,mask_hashes))
 }else{
-  polys <- lapply(cfg$native_vectors,function(p){v<-st_read(p,quiet=TRUE);v[,c('accepted_taxon','mapping_source','geom')]})
-  polys <- do.call(rbind,polys)
+  if(is.null(cfg$native_geometry_bundle)){
+    polys <- lapply(cfg$native_vectors,function(p){v<-st_read(p,quiet=TRUE);v[,c('accepted_taxon','mapping_source','geom')]})
+    polys <- do.call(rbind,polys)
+    membership <- data.frame(accepted_taxon=polys$accepted_taxon,geometry_id=seq_len(nrow(polys)))
+  }else{
+    membership <- read.csv(cfg$native_geometry_bundle$membership)
+    con <- file(cfg$native_geometry_bundle$geometry,'rb');wkbs<-list()
+    repeat{size<-readBin(con,integer(),n=1,size=4,endian='little');if(!length(size))break;stopifnot(size>0);b<-readBin(con,raw(),n=size);stopifnot(length(b)==size);wkbs[[length(wkbs)+1L]]<-b}
+    close(con)
+    polys<-st_sf(geometry=st_as_sfc(structure(wkbs,class='WKB'),crs=4326))
+    stopifnot(all(membership$geometry_id>=1&membership$geometry_id<=nrow(polys)))
+  }
   polys <- st_wrap_dateline(polys,options=c('WRAPDATELINE=YES'))
   dx <- res(template)[1]/2; dy <- res(template)[2]/2
   boxes <- st_sfc(lapply(seq_len(n),function(i){x<-support$xy[i,1];y<-support$xy[i,2];st_polygon(list(rbind(c(x-dx,y-dy),c(x+dx,y-dy),c(x+dx,y+dy),c(x-dx,y+dy),c(x-dx,y-dy))))}),crs=4326)
   cat('Matching saved native polygons to',n,'grid cells\n');flush.console()
   hits <- st_intersects(st_set_crs(polys,NA),st_set_crs(boxes,NA))
-  native <- matrix(FALSE,n,ns); ix <- match(key(polys$accepted_taxon),key(full$species))
-  for(i in which(!is.na(ix)))if(length(hits[[i]]))native[hits[[i]],ix[i]] <- TRUE
-  mapping <- data.frame(species=full$species,native_vector_present=key(full$species)%in%key(polys$accepted_taxon),native_cells=colSums(native))
+  native <- matrix(FALSE,n,ns); ix <- match(key(membership$accepted_taxon),key(full$species))
+  for(i in which(!is.na(ix))){j<-membership$geometry_id[i];if(length(hits[[j]]))native[hits[[j]],ix[i]] <- TRUE}
+  mapping <- data.frame(species=full$species,native_vector_present=key(full$species)%in%key(membership$accepted_taxon),native_cells=colSums(native))
   masks <- list(cells=support$cells,species=full$species,native=native,mapping=mapping,vector_sha256=mask_hashes)
   saveRDS(masks,mask_cache,compress=FALSE)
   rm(polys,hits,boxes);gc()
@@ -122,7 +143,7 @@ for(label in names(cfg$stored_surfaces)){
 }
 write.csv(do.call(rbind,legacy_rows),file.path(out,'stored_surface_contrasts.csv'),row.names=FALSE)
 write.csv(do.call(rbind,legacy_concordance),file.path(out,'stored_surface_concordance.csv'),row.names=FALSE)
-sources<-unique(c(cfg$native_vectors,cfg$paired_manifest,file.path(base,c('support.rds','species_inputs.csv','raster_input_metadata.csv'))))
+sources<-unique(c(mask_sources,cfg$paired_manifest,file.path(base,c('support.rds','species_inputs.csv','raster_input_metadata.csv'))))
 write.csv(data.frame(path=sources,sha256=vapply(sources,function(p)digest(file=p,algo='sha256'),character(1))),file.path(out,'input_checksums.csv'),row.names=FALSE)
 write_json(list(status='COMPUTED',no_sdm_fitting=TRUE,cells=n,species_full=ns,species_paired=nrow(paired),native_mapping_unavailable=masks$mapping$species[!masks$mapping$native_vector_present],native_rule='Saved country polygons, touched grid cells excluded from alien contribution; taxa without mapped native geometry retain the documented no-exclusion treatment',coverage_adjusted_rule='Sum of known alien suitability divided by native plus predicted-alien species; unknown predictions excluded from denominator',bounds_rule='Fixed-pool contribution bounds, not absence imputations',support_scope='Existing all-city geometry, no new city or minimum-cell filter'),file.path(out,'non_native_receipt.json'),auto_unbox=TRUE,pretty=TRUE)
 cat('COMPUTED non-native comparisons\n')
