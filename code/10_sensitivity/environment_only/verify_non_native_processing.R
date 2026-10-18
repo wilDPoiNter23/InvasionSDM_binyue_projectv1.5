@@ -78,5 +78,13 @@ for(i in seq_len(nrow(cc))){
   contrast_error<-max(contrast_error,abs(z$percent-100*(p[1]/p[2]-1)),abs(z$difference-(p[1]-p[2])))
 }
 stopifnot(mean_error<1e-12,contrast_error<1e-9)
-write_json(list(status='PASS',source_value_checks=source_checks,source_check_mode=if(is.null(cfg$reference_source_values))'Direct raster read'else'Independent raster samples exported at source',maximum_source_error=source_error,mask_species_checked=nrow(mask_checks),mask_finite_cells_checked=sum(mask_checks$finite_source_cells),mask_mismatches=sum(mask_checks$mismatches),maximum_zonal_mean_error=mean_error,maximum_contrast_error=contrast_error,full_species=ncol(v$full),paired_species=ncol(v$paired_full),native_grid_cells=length(s$cells)),file.path(out,'non_native_verification.json'),auto_unbox=TRUE,pretty=TRUE)
+legacy_check<-NULL
+if('SEPTEMBER_CONTINUOUS_814'%in%names(cfg$stored_surfaces)){
+  old<-extract(rast(cfg$stored_surfaces$SEPTEMBER_CONTINUOUS_814),s$xy);old<-as.numeric(old[[ncol(old)]])
+  first_ok<-is.finite(v$full[,1])&!m$native[,1]
+  restored<-!is.finite(old)&is.finite(d$products$FULL_814$values$alien_mean)
+  legacy_check<-list(first_species=m$species[1],finite_coverage_mismatches_to_first_species=sum(is.finite(old)!=first_ok),restored_cells=sum(restored),restored_first_native=sum(restored&m$native[,1]),restored_first_missing_outside_native=sum(restored&!m$native[,1]&!is.finite(v$full[,1])))
+  stopifnot(legacy_check$finite_coverage_mismatches_to_first_species==0)
+}
+write_json(list(status='PASS',source_value_checks=source_checks,source_check_mode=if(is.null(cfg$reference_source_values))'Direct raster read'else'Independent raster samples exported at source',maximum_source_error=source_error,mask_species_checked=nrow(mask_checks),mask_finite_cells_checked=sum(mask_checks$finite_source_cells),mask_mismatches=sum(mask_checks$mismatches),maximum_zonal_mean_error=mean_error,maximum_contrast_error=contrast_error,full_species=ncol(v$full),paired_species=ncol(v$paired_full),native_grid_cells=length(s$cells),legacy_first_species_check=legacy_check),file.path(out,'non_native_verification.json'),auto_unbox=TRUE,pretty=TRUE)
 cat('PASS non-native processing checks\n')
