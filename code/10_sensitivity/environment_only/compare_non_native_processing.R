@@ -24,7 +24,7 @@ key <- function(x)tolower(gsub('[._]+',' ',trimws(x)))
 file_hash<-function(path){
   con<-file(path,'rb');on.exit(close(con));chunks<-list()
   repeat{b<-readBin(con,raw(),n=1024L*1024L);if(!length(b))break;chunks[[length(chunks)+1L]]<-b}
-  digest(do.call(c,chunks),algo='sha256',serialize=FALSE)
+  digest(do.call(base::c,chunks),algo='sha256',serialize=FALSE)
 }
 stopifnot(!anyDuplicated(key(full$species)))
 read_values <- function(path){
