@@ -2,6 +2,8 @@
 
 Run `code/10_sensitivity/environment_only/compare_non_native_processing.R` with one JSON configuration, then run `verify_non_native_processing.R` with the same configuration. Reuse the saved all-city grid support and per-species input caches from the processing comparison. No model fitting or projection is performed. Results cover those city grid cells; this workflow does not write a new global aggregate raster.
 
+Run `test_non_native_processing.R` for synthetic checks that distinguish native exclusions, true zero suitability and missing predictions before interpreting numerical results.
+
 Configuration keys are `output_root`, `cached_comparison`, `paired_manifest`, `native_vectors`, `native_projection_manifest`, `seed` and `bootstrap_replicates`. Supply the existing species native-country vectors, including the separately maintained supplementary-species vector. Store configuration, numerical outputs and logs outside the repository.
 
 All inputs are existing continuous predictions on the same grid. The input contract is BIOMOD values from zero to 1000, converted to zero to one. Binary and threshold-filtered paths are rejected. Per-species min-max normalization is not applied. Source-scale metadata and sampled raster checks are retained.
