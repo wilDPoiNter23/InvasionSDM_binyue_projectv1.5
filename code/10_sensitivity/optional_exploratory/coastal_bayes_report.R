@@ -3,7 +3,8 @@ suppressPackageStartupMessages({library(jsonlite);library(digest)})
 a<-commandArgs(TRUE);stopifnot(length(a)==1L);cfg<-fromJSON(a[1]);root<-cfg$output_root
 out<-file.path(root,'report_tables');stopifnot(!dir.exists(out));dir.create(out)
 contrasts<-list();terms<-list();support<-list();receipts<-list()
-for(group in c('ENV','FULL')){
+groups<-if(is.null(cfg$model_groups))c('ENV','FULL')else cfg$model_groups
+for(group in groups){
  mr<-file.path(root,cfg$model_directory,group);completion<-fromJSON(file.path(mr,'completion.json'));stopifnot(completion$status=='BAYESIAN_FITS_COMPLETED')
  d<-readRDS(file.path(mr,'model_input.rds'));z<-unique(d[,c('city_id','zone_id','landuse','age_index_years')])
  for(use in unique(as.character(z$landuse))){x<-z[z$landuse==use,];support[[paste(group,use)]]<-data.frame(group=group,landuse=use,cities=length(unique(x$city_id)),zones=nrow(x),minimum_age_index=min(x$age_index_years),maximum_age_index=max(x$age_index_years))}

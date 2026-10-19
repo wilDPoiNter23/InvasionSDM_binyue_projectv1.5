@@ -4,7 +4,8 @@ a<-commandArgs(TRUE);stopifnot(length(a)==2L);cfg<-fromJSON(a[1]);group<-a[2]
 script<-sub('^--file=','',grep('^--file=',commandArgs(FALSE),value=TRUE)[1]);source(file.path(dirname(script),'coastal_bayes_core.R'))
 model_directory<-if(is.null(cfg$model_directory))'models'else cfg$model_directory
 out<-file.path(cfg$output_root,model_directory,group);stopifnot(!dir.exists(out));dir.create(out,recursive=TRUE)
-files<-list.files(file.path(cfg$output_root,'species',group),pattern='[.]csv$',full.names=TRUE);stopifnot(length(files)==684)
+expected_species<-if(is.null(cfg$expected_species_count))684L else as.integer(cfg$expected_species_count)
+files<-list.files(file.path(cfg$output_root,'species',group),pattern='[.]csv$',full.names=TRUE);stopifnot(length(files)==expected_species)
 d<-do.call(rbind,lapply(files,read.csv));alln<-nrow(d);d<-d[is.finite(d$mean_suitability)&d$finite_area_km2>0,]
 stopifnot(nrow(d)>1000,!anyDuplicated(paste(d$species,d$zone_id)))
 z<-read.csv(file.path(cfg$output_root,'zones.csv'));mu<-tapply(z$age_index_years,z$city_id,mean)

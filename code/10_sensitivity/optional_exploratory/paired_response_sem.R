@@ -64,7 +64,9 @@ main <- function(){
  suppressPackageStartupMessages({library(jsonlite);library(digest)})
  cfg <- fromJSON(commandArgs(TRUE)[1],simplifyVector=FALSE);out<-cfg$output_root
  species_count<-if(is.null(cfg$expected_species_count))684L else as.integer(cfg$expected_species_count)
- if(length(species_count)!=1L||is.na(species_count)||species_count<1L||species_count>684L)stop("Invalid declared species count")
+ if(length(species_count)!=1L||is.na(species_count)||species_count<1L||species_count>814L)stop("Invalid declared species count")
+ native_response<-identical(cfg$response_definition,"CELLWISE_NATIVE_EXCLUDED")
+ model_groups<-if(is.null(cfg$model_groups))c("FULL","ENV")else unlist(cfg$model_groups)
  complete_status<-if(is.null(cfg$binary_complete_status))paste0("COMPLETE_FIXED_",species_count)else cfg$binary_complete_status
  if(dir.exists(out))stop("Existing component sensitivity retained")
  dir.create(out,recursive=TRUE)
@@ -94,11 +96,11 @@ main <- function(){
   r<-read.csv(cfg$binary_city_responses,stringsAsFactors=FALSE);r<-r[r$region=="CITY",];r$key<-key(r$city_id)
   if(anyDuplicated(paste(r$key,r$group,r$threshold))||any(!r$key %in% base$key)||anyNA(r$frozen_species_n)||any(r$frozen_species_n!=species_count))stop("Binary response contract failed: declared species denominator or city identity differs")
   available<-list()
-  for(g in c("FULL","ENV"))for(t in c("T10","MAX_TSS")){
+  for(g in model_groups)for(t in c("T10","MAX_TSS")){
    a<-r[r$group==g&r$threshold==t&r$status==complete_status,]
    if(!nrow(a))stop("Missing binary group-threshold case")
    z<-merge(base,a,by="key",all.x=TRUE)
-   z$fraction<-z$mean_species_suitable_fraction;z$mean_area<-log1p(z$suitable_species_area_km2/species_count)
+   z$fraction<-z$mean_species_suitable_fraction;z$mean_area<-if(native_response)log1p(z$mean_species_suitable_area_km2)else log1p(z$suitable_species_area_km2/species_count)
    if(any(z$fraction<0|z$fraction>1,na.rm=TRUE)||any(z$suitable_species_area_km2<0,na.rm=TRUE))stop("Binary response value gate failed")
    available[[paste(g,t,sep="_")]]<-z
   }
@@ -149,7 +151,7 @@ main <- function(){
  write_json(list(status="ADAPTED_UNSUPERVISED_PC_COMPONENT_SENSITIVITY",inputs=receipts,
   bootstrap="City resampling; original per-case standardization fixed; cached design matrices and lm.fit preserve the original equations and draw stream",formulas=lapply(component_formulas(),function(f)paste(deparse(f),collapse=" ")),
   path_pruning=FALSE,city_area_in_every_equation=TRUE,causal_interpretation=FALSE,original_sem_reproduction=FALSE,
-  binary_species_scope=if(is.null(cfg$binary_city_responses))"NOT_REQUESTED"else if(species_count==684L)"STRICT_PAIRED_684"else "ADAPTED_FIXED_ELIGIBILITY_CORE",
+  binary_species_scope=if(is.null(cfg$binary_city_responses))"NOT_REQUESTED"else if(native_response)paste0("CELLWISE_NATIVE_EXCLUDED_",species_count)else if(species_count==684L)"STRICT_PAIRED_684"else "ADAPTED_FIXED_ELIGIBILITY_CORE",
   limitations=c("Fixed city PCs use unsupervised predictor variation; old risk-supervised composite weights are excluded",
    "Full SDM response retains predictor-to-response construction reuse; environmental-only response reduces human-predictor reuse",
    "Observed richness remains conditional on detection and recording; target-record intensity is endogenous",

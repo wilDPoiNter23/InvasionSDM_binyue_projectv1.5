@@ -6,6 +6,8 @@ if(file.exists(file.path(out,"verification.json")))stop("Existing verification r
 edges<-read.csv(file.path(out,"edges.csv"));effects<-read.csv(file.path(out,"effects.csv"));draws<-read.csv(file.path(out,"draws.csv"),check.names=FALSE)
 support<-read.csv(file.path(out,"support.csv"));checks<-list()
 species_count<-if(is.null(cfg$expected_species_count))684L else as.integer(cfg$expected_species_count)
+native_response<-identical(cfg$response_definition,"CELLWISE_NATIVE_EXCLUDED")
+model_groups<-if(is.null(cfg$model_groups))c("FULL","ENV")else unlist(cfg$model_groups)
 scales<-read.csv(file.path(out,"scales.csv"))
 raw<-read.csv(cfg$city_predictors,check.names=FALSE);frozen<-read.csv(file.path(out,"frozen_predictor_pcs.csv"))
 loadings<-read.csv(file.path(out,"fixed_pc_loadings.csv"),stringsAsFactors=FALSE)
@@ -26,7 +28,7 @@ for(nm in unique(edges$case)){
   stopifnot(all(e$frozen_species_n==species_count),all(d$frozen_species_n==species_count))
   scale_y<-scales[scales$case==nm&scales$variable=="y",]
   raw_y<-d$y*scale_y$sd+scale_y$mean
-  expected_y<-if(grepl("_mean_area$",nm))log1p(d$suitable_species_area_km2/species_count)else d$mean_species_suitable_fraction
+  expected_y<-if(grepl("_mean_area$",nm)){if(native_response)log1p(d$mean_species_suitable_area_km2)else log1p(d$suitable_species_area_km2/species_count)}else d$mean_species_suitable_fraction
   stopifnot(max(abs(raw_y-expected_y))<1e-10,all(effects$frozen_species_n[effects$case==nm]==species_count))
  }
  for(response in unique(e$response)){
@@ -65,7 +67,7 @@ for(nm in unique(edges$case)){
 }
 binary<-support[support$response_type=="binary"&support$status=="ADAPTED_EXPLORATORY_COMPONENT_SYSTEM",]
 if(nrow(binary)){
- stopifnot(nrow(binary)==8L,length(unique(binary$n))==1L,all(binary$frozen_species_n==species_count))
+ stopifnot(nrow(binary)==4L*length(model_groups),length(unique(binary$n))==1L,all(binary$frozen_species_n==species_count))
  keys<-lapply(binary$case,function(nm)sort(read.csv(file.path(out,paste0("data_",nm,".csv")))$key))
  stopifnot(all(vapply(keys,function(k)identical(k,keys[[1]]),logical(1))))
 }
