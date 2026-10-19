@@ -8,10 +8,12 @@ pm<-match(v$paired_species,m$species)
 if(!is.null(cfg$coastal_roots))for(root in cfg$coastal_roots){
  s<-readRDS(file.path(root,'native_support.rds'));w<-s$weights
  W<-sparseMatrix(i=w$zone_id,j=match(w$cell,a$cells),x=w$weight_km2,dims=c(nrow(s$zones),length(a$cells)))
- groups<-list.files(file.path(root,'models_multilevel'))
+ model_directory<-if(is.null(cfg$model_directory))'models_multilevel'else cfg$model_directory
+ groups<-list.files(file.path(root,model_directory))
  if(!is.null(cfg$model_groups))groups<-intersect(groups,cfg$model_groups)
  for(g in groups){
-  mr<-file.path(root,'models_multilevel',g);stopifnot(file.exists(file.path(mr,'completion.json')))
+  mr<-file.path(root,model_directory,g);stopifnot(file.exists(file.path(mr,'completion.json')))
+  completion<-fromJSON(file.path(mr,'completion.json'))
   x<-switch(g,ENV=v$paired_env,FULL=v$paired_full,FULL_814=v$full)
   sp<-if(g=='FULL_814')m$species else v$paired_species
   mask<-if(g=='FULL_814')m$native else m$native[,pm,drop=FALSE]
@@ -20,9 +22,10 @@ if(!is.null(cfg$coastal_roots))for(root in cfg$coastal_roots){
   expected<-numerator/denominator;d<-readRDS(file.path(mr,'model_input.rds'))
   ind<-cbind(match(d$zone_id,s$zones$zone_id),match(as.character(d$species),sp));stopifnot(!anyNA(ind))
   check(expected[ind],d$mean_suitability);check(denominator[ind],d$finite_area_km2)
-  for(case in c('primary','prior_sensitivity','transform_sensitivity')){
+  for(case in names(completion$cases)){
    cr<-file.path(mr,case);fits<-readRDS(file.path(cr,'posterior_chains.rds'))
-   stopifnot(length(fits)==4L,all(vapply(fits,function(f)nrow(f$beta)==4500L,logical(1))))
+   samples<-if(is.null(cfg$expected_samples))4500L else cfg$expected_samples
+   stopifnot(length(fits)==4L,all(vapply(fits,function(f)nrow(f$beta)==samples,logical(1))))
    B<-do.call(rbind,lapply(fits,`[[`,'beta'));q<-read.csv(file.path(cr,'posterior_summary.csv'))
    for(term in colnames(B)){
     row<-q[q$term==term,];stopifnot(nrow(row)==1L)

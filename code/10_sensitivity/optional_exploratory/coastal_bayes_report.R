@@ -1,7 +1,8 @@
 # Consolidate complete posterior tables and interpretable point comparisons.
 suppressPackageStartupMessages({library(jsonlite);library(digest)})
 a<-commandArgs(TRUE);stopifnot(length(a)==1L);cfg<-fromJSON(a[1]);root<-cfg$output_root
-out<-file.path(root,'report_tables');stopifnot(!dir.exists(out));dir.create(out)
+report_directory<-if(is.null(cfg$report_directory))'report_tables'else cfg$report_directory
+out<-file.path(root,report_directory);stopifnot(!dir.exists(out));dir.create(out)
 contrasts<-list();terms<-list();support<-list();receipts<-list()
 groups<-if(is.null(cfg$model_groups))c('ENV','FULL')else cfg$model_groups
 for(group in groups){
