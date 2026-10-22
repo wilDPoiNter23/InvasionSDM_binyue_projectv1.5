@@ -1,4 +1,4 @@
-# Plot held-out performance of fold-matched EMmean and EMmedian reconstructions.
+# Plot held-out performance of the selected ensemble procedures across species.
 # Usage: Rscript render_foldmatched_ensemble_validation.R manifest.csv folds_dir output_prefix [unavailable.csv]
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -76,10 +76,8 @@ write.csv(source_species, paste0(prefix, "_species_source_data.csv"), row.names 
 write.csv(coverage, paste0(prefix, "_coverage.csv"), row.names = FALSE, na = "")
 write.csv(unavailable, paste0(prefix, "_unavailable.csv"), row.names = FALSE, na = "")
 
-counts <- table(factor(species$method, levels = c("EMmean", "EMmedian")))
-labels <- paste0(names(counts), "\n(n = ", as.integer(counts), ")")
-names(labels) <- names(counts)
-palette <- c(EMmean = "#89B8B4", EMmedian = "#D7AF91")
+species$display_group <- "Selected ensemble"
+display_label <- paste0("Selected ensemble\n(n = ", nrow(species), ")")
 theme_fig <- theme_classic(base_size = 7.5, base_family = "sans") +
   theme(axis.line = element_line(linewidth = 0.35, colour = "#252525"),
         axis.ticks = element_line(linewidth = 0.30, colour = "#252525"),
@@ -93,14 +91,14 @@ theme_fig <- theme_classic(base_size = 7.5, base_family = "sans") +
         plot.background = element_rect(fill = "white", colour = NA))
 
 panel <- function(metric, y_label, lower) {
-  ggplot(species, aes(x = method, y = .data[[metric]], fill = method)) +
-    geom_violin(width = 0.76, trim = TRUE, alpha = 0.52, colour = NA) +
+  ggplot(species, aes(x = display_group, y = .data[[metric]])) +
+    geom_violin(width = 0.76, trim = TRUE, fill = "#89B8B4",
+                alpha = 0.52, colour = NA) +
     geom_point(position = position_jitter(width = 0.16, height = 0, seed = 20261022),
                size = 0.38, alpha = 0.16, colour = "#343434") +
     geom_boxplot(width = 0.18, outlier.shape = NA, fill = "white",
                  colour = "#343434", linewidth = 0.38) +
-    scale_fill_manual(values = palette, drop = FALSE) +
-    scale_x_discrete(limits = c("EMmean", "EMmedian"), labels = labels) +
+    scale_x_discrete(labels = display_label) +
     scale_y_continuous(limits = c(lower, 1.01), breaks = pretty(c(lower, 1), 6),
                        expand = expansion(mult = c(0, 0))) +
     labs(x = NULL, y = y_label) + theme_fig
@@ -130,11 +128,9 @@ print(figure)
 dev.off()
 
 summary <- species |>
-  group_by(method) |>
   summarise(n_species = n(), median_auc = median(auc), q25_auc = quantile(auc, .25),
             q75_auc = quantile(auc, .75), median_tss = median(tss),
-            q25_tss = quantile(tss, .25), q75_tss = quantile(tss, .75),
-            .groups = "drop")
+            q25_tss = quantile(tss, .25), q75_tss = quantile(tss, .75))
 write.csv(summary, paste0(prefix, "_summary.csv"), row.names = FALSE)
 caption <- paste0(
   "Extended Data Fig. 1 | Held-out performance of fold-matched ensemble species distribution models. ",
@@ -143,12 +139,11 @@ caption <- paste0(
   "on training records, and predictions were combined by the EMmean or EMmedian method used for that species' final projection. ",
   "The TSS threshold was set on training records and applied to the held-out fold. ",
   "Points are species medians across held-out folds; boxes show medians and interquartile ranges, ",
-  "and violins show species-level distributions. Of ", nrow(manifest),
+  "and violins show species-level distributions. Results are pooled across the selected ensemble ",
+  "procedures rather than compared by aggregation method. Of ", nrow(manifest),
   " final projections with an identifiable ensemble method, ", nrow(unavailable),
   " lacked readable archived fold data and ", nrow(coverage) - nrow(species),
-  " had fewer than two evaluable folds. The remaining species are shown ",
-  "(EMmean, n = ", counts[["EMmean"]], "; EMmedian, n = ", counts[["EMmedian"]], "). ",
-  "The two methods apply to different species and are not a paired comparison. ",
+  " had fewer than two evaluable folds. The remaining ", nrow(species), " species are shown. ",
   "These fold-specific ensembles test the aggregation procedure used for the final projections; ",
   "their scores are not validation scores stored for the final full-data ensemble objects."
 )
