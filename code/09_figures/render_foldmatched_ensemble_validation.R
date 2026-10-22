@@ -1,4 +1,4 @@
-# Plot held-out performance of the selected ensemble procedures across species.
+# Plot the selected ensemble procedures as replacement Extended Data Fig. 1b.
 # Usage: Rscript render_foldmatched_ensemble_validation.R manifest.csv folds_dir output_prefix [unavailable.csv]
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -76,40 +76,40 @@ write.csv(source_species, paste0(prefix, "_species_source_data.csv"), row.names 
 write.csv(coverage, paste0(prefix, "_coverage.csv"), row.names = FALSE, na = "")
 write.csv(unavailable, paste0(prefix, "_unavailable.csv"), row.names = FALSE, na = "")
 
-species$display_group <- "Selected ensemble"
-display_label <- paste0("Selected ensemble\n(n = ", nrow(species), ")")
-theme_fig <- theme_classic(base_size = 7.5, base_family = "sans") +
-  theme(axis.line = element_line(linewidth = 0.35, colour = "#252525"),
-        axis.ticks = element_line(linewidth = 0.30, colour = "#252525"),
-        axis.text = element_text(size = 7, colour = "#252525"),
-        axis.title = element_text(size = 7.5, colour = "#252525"),
-        panel.border = element_rect(fill = NA, colour = "#555555", linewidth = 0.3),
+plot_data <- rbind(
+  data.frame(accepted_taxon = species$accepted_taxon, metric = "AUC",
+             score = species$auc),
+  data.frame(accepted_taxon = species$accepted_taxon, metric = "TSS",
+             score = species$tss)
+)
+plot_data$metric <- factor(plot_data$metric, levels = c("AUC", "TSS"))
+palette <- c(AUC = "#82B8D5", TSS = "#DF9992")
+figure <- ggplot(plot_data, aes(x = metric, y = score, fill = metric)) +
+  geom_violin(width = 0.77, trim = TRUE, alpha = 0.82, colour = NA) +
+  geom_point(aes(colour = metric),
+             position = position_jitter(width = 0.18, height = 0, seed = 20261022),
+             size = 0.34, alpha = 0.22) +
+  geom_boxplot(width = 0.19, outlier.shape = NA, fill = "white",
+               colour = "#3C3C3C", linewidth = 0.39) +
+  scale_fill_manual(values = palette) +
+  scale_colour_manual(values = palette) +
+  scale_y_continuous(limits = c(-0.10, 1.02),
+                     breaks = c(0, 0.25, 0.50, 0.75, 1),
+                     expand = expansion(mult = c(0, 0))) +
+  labs(x = NULL, y = "Held-out validation score", tag = "b") +
+  theme_classic(base_size = 7.5, base_family = "sans") +
+  theme(axis.line = element_blank(),
+        axis.ticks = element_line(linewidth = 0.3, colour = "#333333"),
+        axis.text = element_text(size = 7, colour = "#333333"),
+        axis.title = element_text(size = 7.4, colour = "#333333"),
+        panel.border = element_rect(fill = NA, colour = "#333333", linewidth = 0.4),
         panel.grid = element_blank(), legend.position = "none",
         plot.tag = element_text(face = "bold", size = 9),
         plot.tag.position = c(0.01, 0.99),
-        plot.margin = margin(8, 7, 6, 7),
+        plot.margin = margin(5, 5, 4, 5),
         plot.background = element_rect(fill = "white", colour = NA))
-
-panel <- function(metric, y_label, lower) {
-  ggplot(species, aes(x = display_group, y = .data[[metric]])) +
-    geom_violin(width = 0.76, trim = TRUE, fill = "#89B8B4",
-                alpha = 0.52, colour = NA) +
-    geom_point(position = position_jitter(width = 0.16, height = 0, seed = 20261022),
-               size = 0.38, alpha = 0.16, colour = "#343434") +
-    geom_boxplot(width = 0.18, outlier.shape = NA, fill = "white",
-                 colour = "#343434", linewidth = 0.38) +
-    scale_x_discrete(labels = display_label) +
-    scale_y_continuous(limits = c(lower, 1.01), breaks = pretty(c(lower, 1), 6),
-                       expand = expansion(mult = c(0, 0))) +
-    labs(x = NULL, y = y_label) + theme_fig
-}
-
-p_auc <- panel("auc", "Held-out AUC", min(0, min(species$auc) - 0.03))
-p_tss <- panel("tss", "Held-out TSS", min(-0.2, min(species$tss) - 0.03))
-figure <- (p_auc | p_tss) + plot_layout(widths = c(1, 1)) +
-  plot_annotation(tag_levels = "a")
-width_in <- 183 / 25.4
-height_in <- 76 / 25.4
+width_in <- 82 / 25.4
+height_in <- 62 / 25.4
 svglite::svglite(paste0(prefix, ".svg"), width = width_in, height = height_in,
                  bg = "white", system_fonts = list(sans = "Liberation Sans"))
 print(figure)
@@ -133,19 +133,13 @@ summary <- species |>
             q25_tss = quantile(tss, .25), q75_tss = quantile(tss, .75))
 write.csv(summary, paste0(prefix, "_summary.csv"), row.names = FALSE)
 caption <- paste0(
-  "Extended Data Fig. 1 | Held-out performance of fold-matched ensemble species distribution models. ",
-  "a, Area under the receiver operating characteristic curve (AUC); b, true skill statistic (TSS). ",
-  "For each archived validation fold, at least two constituent models were selected by their calibration scores ",
-  "on training records, and predictions were combined by the EMmean or EMmedian method used for that species' final projection. ",
-  "The TSS threshold was set on training records and applied to the held-out fold. ",
-  "Points are species medians across held-out folds; boxes show medians and interquartile ranges, ",
-  "and violins show species-level distributions. Results are pooled across the selected ensemble ",
-  "procedures rather than compared by aggregation method. Of ", nrow(manifest),
-  " final projections with an identifiable ensemble method, ", nrow(unavailable),
-  " lacked readable archived fold data and ", nrow(coverage) - nrow(species),
-  " had fewer than two evaluable folds. The remaining ", nrow(species), " species are shown. ",
-  "These fold-specific ensembles test the aggregation procedure used for the final projections; ",
-  "their scores are not validation scores stored for the final full-data ensemble objects."
+  "Extended Data Fig. 1b | Held-out performance of fold-matched ensemble species distribution models. ",
+  "The aggregation rule matches each species' retained projection (n = ", nrow(species), " species). ",
+  "Each point is a species median across at least two evaluable held-out folds; violins show ",
+  "species-level distributions, boxes show medians and interquartile ranges, and whiskers extend ",
+  "to 1.5 times the interquartile range. Constituent models and TSS cutoffs were selected using ",
+  "training-fold data before evaluation on held-out records. AUC, area under the receiver ",
+  "operating characteristic curve; TSS, true skill statistic."
 )
 writeLines(caption, paste0(prefix, "_caption.txt"), useBytes = TRUE)
 print(summary)
