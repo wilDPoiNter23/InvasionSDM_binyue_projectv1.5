@@ -1,9 +1,13 @@
 # Bind accepted projections to archived fitted objects for fold-matched validation.
-# Usage: Rscript prepare_ensemble_validation_manifest.R assets.csv accepted.csv manifest.csv excluded.csv
+# Usage: Rscript prepare_ensemble_validation_manifest.R assets.csv accepted.csv manifest.csv excluded.csv [prediction_scale]
 
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) != 4L) {
-  stop("Usage: Rscript prepare_ensemble_validation_manifest.R assets.csv accepted.csv manifest.csv excluded.csv")
+if (!length(args) %in% c(4L, 5L)) {
+  stop("Usage: Rscript prepare_ensemble_validation_manifest.R assets.csv accepted.csv manifest.csv excluded.csv [prediction_scale]")
+}
+prediction_scale <- if (length(args) == 5L) args[5] else "UNDECLARED"
+if (!prediction_scale %in% c("1", "1000", "UNDECLARED")) {
+  stop("prediction_scale must be 1, 1000 or UNDECLARED")
 }
 assets <- read.csv(args[1], stringsAsFactors = FALSE, check.names = FALSE)
 accepted <- read.csv(args[2], stringsAsFactors = FALSE, check.names = FALSE)
@@ -51,6 +55,7 @@ manifest <- bound[bound$input_status == "ready",
 excluded <- bound[bound$input_status != "ready",
                   c("accepted_taxon", "source_generation", "product_type",
                     "selected_continuous_projection", "model_object_path", "input_status")]
+manifest$prediction_scale <- rep(prediction_scale, nrow(manifest))
 if (anyDuplicated(manifest$accepted_taxon)) stop("Output manifest has duplicate species")
 dir.create(dirname(args[3]), recursive = TRUE, showWarnings = FALSE)
 if (file.exists(args[3]) || file.exists(args[4])) stop("Output exists")

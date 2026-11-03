@@ -4,6 +4,10 @@ The repository supplies analysis implementations and statistical figure componen
 
 ## Static validation
 
+The working revision branch is `reviewer-sensitivity`; the earlier integration
+branch is `publication-integration`. Historical commit identifiers continue to
+identify the same source versions after a branch name changes.
+
 Run from the repository root with Python 3, Rscript and Bash available:
 
 ```sh
@@ -11,6 +15,44 @@ python tools/validate_publication.py
 ```
 
 If those executables are outside PATH, supply `--rscript /path/to/Rscript` and `--bash /path/to/bash`. Using an absolute path to `tools/validate_publication.py` allows the check to run from another directory. This command parses R and Python, checks Bash syntax, checks local Markdown links, verifies literal `publication_path` aliases against the example configuration and checks the eleven preserved source checksums. It does not install packages, source R scripts, load scientific data, submit jobs or run models. Missing checking executables produce a failed check rather than a false pass.
+
+## Focused implementation checks
+
+The 2026-11-03 maintenance checks cover pending preparation, response-comparison
+and figure scripts, alongside the locally committed revision additions. The
+layout checker and static validator check public-file placement, source syntax,
+local links, configuration aliases and preserved source bytes. Check JavaScript
+modules separately with `node --check`.
+
+Small synthetic fixtures check binary thresholds and coverage denominators,
+incomplete products and resume protection, observation dates and duplicates,
+native exclusions versus genuinely missing predictions, geometric partitions,
+whole-city area weights and ratio definitions. The ensemble evaluator provides
+`--self-test` for its ranking, training-cutoff and training-only member-selection
+helpers. These checks use synthetic records and temporary files rather than
+recreating manuscript results. Python observation fixtures require `duckdb`;
+the geospatial R fixtures require the packages declared by their scripts.
+
+The optional workbook exporter additionally needs the separately supplied
+`@oai/artifact-tool` JavaScript runtime. Its package and dependency lock are not
+distributed here. The saved CSV tables remain the portable source-data route;
+JavaScript syntax validation alone does not verify workbook execution.
+
+The fitted-model entrypoints retain their legacy pseudo-absence settings. Their
+explicit `--prepare-pa` mode exits before fitting and is documented in
+[pseudo_absence_preparation](pseudo_absence_preparation.md). The original
+period/lag/residual figure entry remains the default; saved absolute-area model
+figures use its explicit `--absolute-area` mode. New data-dependent verifiers
+require the matching saved models, source tables and external configuration.
+Passing implementation checks establishes those tested contracts, while
+manuscript numerical reproduction still requires the corresponding real inputs.
+
+Two narrower verification scopes remain: the local-slope verifier checks saved
+grid and band consistency without independently rebuilding all support and
+simultaneous-band calculations; the response-step verifier does not establish
+the archived historical baseline's confidence-interval identity. Keep these
+requirements distinct from the saved-model interval reconstruction performed
+by `verify_absolute_area_models.R`.
 
 ## Source coverage
 

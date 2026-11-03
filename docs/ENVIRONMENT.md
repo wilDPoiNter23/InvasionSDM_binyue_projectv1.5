@@ -17,3 +17,17 @@ Of 73 referenced package names, 52 have an observed DESCRIPTION and 21 were not 
 An installed DESCRIPTION establishes package metadata presence, not successful loading or compatible compiled dependencies. The profile does not capture the complete dependency graph, GDAL/GEOS/PROJ, Java/MaxEnt, system libraries, every R library search path or historical random-number state. The library directory's `renv` name does not establish that this repository contains an `renv.lock` or a restored environment.
 
 Use the recorded paired-session versions as concrete evidence when identifying a compatible downstream environment. Use the current DESCRIPTION snapshot to inspect available packages and remaining requirements. Preserve the historical fit's own environment records whenever available. This CSV is an observed environment profile, not a historical full-fit lockfile or a guarantee of numerical reproduction.
+
+## Local implementation checks on 2026-11-03
+
+Static and small synthetic checks used Windows R 4.5.1. The installed terra and
+sf packages reported builds under R 4.5.2. Native-exclusion, polygon-partition,
+whole-city weighting and synthetic raster-comparison checks exited successfully.
+The pseudo-absence helper's `--unit-only` checks also exited successfully.
+
+The optional synthetic BIOMOD formatting check reached its count and membership
+assertions, then the process terminated with Windows native exit code
+`-1073741819`. That integration run is recorded as a failed process; successful
+assertions alone do not establish a working BIOMOD runtime. Recheck the formatter
+in a compatible environment before using preparation outputs. This check fitted
+no species distribution models and used no manuscript inputs.

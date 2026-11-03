@@ -81,13 +81,16 @@ presence_background <- function(formatted, pa) {
   y
 }
 
-normalise_predictions <- function(values) {
-  if (any(is.finite(values) & (values < 0 | values > 1000))) stop("Predictions outside [0, 1000]")
-  if (any(values > 1, na.rm = TRUE)) values <- values / 1000
-  values
+normalise_predictions <- function(values, prediction_scale) {
+  if (length(prediction_scale) != 1L || !is.finite(prediction_scale) ||
+      !prediction_scale %in% c(1, 1000)) stop("Declare prediction_scale as 1 or 1000")
+  if (any(is.finite(values) & (values < 0 | values > prediction_scale))) {
+    stop("Predictions outside declared [0, ", prediction_scale, "] scale")
+  }
+  values / prediction_scale
 }
 
-evaluate_one_fold <- function(evaluation, predictions, calibration, y, pa, run, method) {
+evaluate_one_fold <- function(evaluation, predictions, calibration, y, pa, run, method, prediction_scale) {
   chosen <- select_members(evaluation, pa, run)
   column <- paste0("_", pa, "_", run)
   if (!column %in% colnames(calibration)) stop("Calibration column missing: ", column)
@@ -109,7 +112,7 @@ evaluate_one_fold <- function(evaluation, predictions, calibration, y, pa, run, 
   for (j in seq_along(chosen$names)) {
     part <- sub[sub$full.name == chosen$names[j], , drop = FALSE]
     if (any(!part$points %in% seq_along(y))) stop("Prediction point outside formatted data")
-    score_matrix[part$points, j] <- normalise_predictions(as.numeric(part$pred))
+    score_matrix[part$points, j] <- normalise_predictions(as.numeric(part$pred), prediction_scale)
   }
   complete <- rowSums(is.finite(score_matrix)) == ncol(score_matrix)
   score <- rep(NA_real_, length(y))
@@ -150,13 +153,14 @@ evaluate_species <- function(row) {
     pa <- pairs$PA[i]
     run <- pairs$run[i]
     evaluate_one_fold(evaluation, predictions, calibration,
-                      presence_background(formatted, pa), pa, run, row$selected_method)
+                      presence_background(formatted, pa), pa, run, row$selected_method, row$prediction_scale)
   })
   d <- do.call(rbind, results)
   d$accepted_taxon <- row$accepted_taxon
   d$source_generation <- row$source_generation
   d$model_object_path <- row$model_object_path
   d$model_md5 <- unname(tools::md5sum(row$model_object_path))
+  d$prediction_scale <- row$prediction_scale
   d$biomod2_version <- as.character(utils::packageVersion("biomod2"))
   d
 }
@@ -172,6 +176,29 @@ run_self_test <- function() {
                           metric.eval = rep(c("TSS", "ROC"), 3),
                           calibration = c(.9, .9, .75, .75, .6, .6))
   stopifnot(identical(select_members(test_eval, "PA1", "RUN1")$names, c("a", "b")))
+  # A low-valued member must retain the same declared scale as other members.
+  stopifnot(identical(normalise_predictions(c(0, 1), 1000), c(0, .001)),
+            identical(normalise_predictions(c(0, 1), 1), c(0, 1)))
+  mixed_eval <- data.frame(PA = "PA1", run = "RUN1",
+    full.name = rep(c("low", "regular"), each = 2),
+    algo = rep(c("GLM", "RF"), each = 2),
+    metric.eval = rep(c("TSS", "ROC"), 2), calibration = .9)
+  mixed_predictions <- data.frame(full.name = rep(c("low", "regular"), each = 8),
+    points = rep(1:8, 2), pred = c(1, 1, 0, 0, 1, 0, 1, 0,
+                                  800, 900, 100, 200, 900, 850, 300, 200),
+    PA = "PA1", run = "RUN1")
+  mask <- matrix(c(rep(TRUE, 4), rep(FALSE, 4)), ncol = 1,
+    dimnames = list(NULL, "_PA1_RUN1"))
+  labels <- rep(c(1, 1, 0, 0), 2)
+  raw <- evaluate_one_fold(mixed_eval, mixed_predictions, mask, labels,
+    "PA1", "RUN1", "EMmean", 1000)
+  probabilities <- mixed_predictions; probabilities$pred <- probabilities$pred / 1000
+  probability <- evaluate_one_fold(mixed_eval, probabilities, mask, labels,
+    "PA1", "RUN1", "EMmean", 1)
+  stopifnot(identical(raw, probability), raw$auc == 1, raw$tss == 1,
+            abs(raw$threshold - .4005) < 1e-12,
+            inherits(try(normalise_predictions(1, NA_real_), silent = TRUE), "try-error"),
+            inherits(try(normalise_predictions(2, 1), silent = TRUE), "try-error"))
   cat("Self-test passed\n")
 }
 
@@ -180,9 +207,10 @@ if (identical(args, "--self-test")) {
   run_self_test()
 } else {
   if (length(args) != 3L) stop("Usage: Rscript evaluate_foldmatched_ensembles.R manifest.csv row_index output_dir")
-  missing <- !requireNamespace("biomod2", quietly = TRUE)
-  if (missing) stop("biomod2 is required")
   manifest <- read.csv(args[1], stringsAsFactors = FALSE, check.names = FALSE)
+  if (!"prediction_scale" %in% names(manifest)) {
+    stop("Manifest must declare prediction_scale (1 or 1000) for archived point predictions")
+  }
   needed <- c("accepted_taxon", "model_object_path", "working_directory",
               "source_generation", "selected_method")
   if (!all(needed %in% names(manifest))) stop("Manifest missing required columns")
@@ -190,6 +218,12 @@ if (identical(args, "--self-test")) {
   if (is.na(i) || i < 1L || i > nrow(manifest)) stop("Invalid manifest row index")
   row <- manifest[i, , drop = FALSE]
   if (!row$selected_method %in% c("EMmean", "EMmedian")) stop("Selected method must be EMmean or EMmedian")
+  row$prediction_scale <- suppressWarnings(as.numeric(row$prediction_scale))
+  if (length(row$prediction_scale) != 1L || !is.finite(row$prediction_scale) ||
+      !row$prediction_scale %in% c(1, 1000)) {
+    stop("Manifest row must declare prediction_scale as 1 or 1000; UNDECLARED cannot be evaluated")
+  }
+  if (!requireNamespace("biomod2", quietly = TRUE)) stop("biomod2 is required")
   dir.create(args[3], recursive = TRUE, showWarnings = FALSE)
   output <- file.path(args[3], sprintf("%04d.csv", i))
   if (file.exists(output)) stop("Output already exists: ", output)
