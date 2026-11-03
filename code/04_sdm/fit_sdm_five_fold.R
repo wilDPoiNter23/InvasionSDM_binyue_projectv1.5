@@ -2,6 +2,15 @@
 # Input: Species list, occurrence tables and predictor stack
 # Output: Models and projections with the settings specified below
 
+# Preparation mode exits before loading or running the fitting workflow.
+preparation_args <- commandArgs(trailingOnly = TRUE)
+if (length(preparation_args) > 0 && preparation_args[1] == "--prepare-pa") {
+  stopifnot(length(preparation_args) == 2)
+  options(invasionSDM.pa.config = preparation_args[2])
+  source(file.path(Sys.getenv("INVASIONSDM_PROJECT_ROOT", "."), "code",
+                   "04_sdm", "preparation", "prepare_pseudo_absence_pilot.R"))
+  quit(save = "no", status = 0)
+}
 source(file.path(Sys.getenv("INVASIONSDM_PROJECT_ROOT", "."), "config", "bootstrap.R"))
 # ============================================================================
 # 1000 records and EMmean only
