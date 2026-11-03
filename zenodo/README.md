@@ -19,7 +19,7 @@ The final paired set contains 684 taxa from 814 candidates; 130 are excluded. Th
 - paired_species_manifest.csv
 - paired_vs_excluded_species_summary.csv
 
-Supporting numeric files include city extractions, raster QC and the attrition detail table. The optional city GAM outputs retain the manuscript model definition and archived covariates. Continuous predictions are divided by 1000; means share the species with finite values in both groups within each cell. No new native-range mask or per-species minâ€“max normalization is applied. No binary aggregates are required.
+Supporting numeric files include city extractions, raster QC and the attrition detail table. The optional city GAM outputs retain the manuscript model definition and archived covariates. Continuous predictions are divided by 1000; means share the species with finite values in both groups within each cell. This paired product uses no additional native-range mask or per-species min-max normalization and requires no binary aggregate.
 
 The package manifest uses root aliases to avoid machine-specific paths. FULL_SDM_ROOT identifies accepted baseline model/projection inputs; ENV_SOURCE_ROOT identifies the saved environment-only inputs; ATTRITION_INPUTS identifies the source roster, evaluation table and candidate inventory. Relocate these aliases before re-running with the separately retained model/projection collections. Keep model members and calibration/formatted inputs together.
 

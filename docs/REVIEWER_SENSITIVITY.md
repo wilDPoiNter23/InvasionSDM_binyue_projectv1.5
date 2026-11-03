@@ -1,9 +1,9 @@
-# Reviewer-informed downstream sensitivities
+# Downstream sensitivity analyses
 
-These analyses reuse accepted suitability products and existing city covariates.
-They do not fit species distribution models or alter the historical response.
-Store all results, models, figures, logs and written findings in one external,
-article-specific evidence directory. Keep results outside version control.
+These analyses combine accepted suitability products with existing city
+covariates. Historical and paired responses are analysed separately. Store
+results, fitted city models, figures and logs in one external evidence directory.
+Species distribution model fitting belongs to the separate production workflow.
 
 ## Modules
 
@@ -52,8 +52,8 @@ uses separate smooths of log1p(reclaimed area) and log1p(city area). G2 uses a
 reclamation fraction and log1p(city area). G3 uses their tensor product subject
 to explicit support checks. All retain the anthropogenic, climate, soil and
 marine PC1 covariates. Reclaimed area is supplied in hectares; the new fraction
-converts hectares to km2 before division by city area. This conversion is explicit
-and does not silently redefine the reported G0 model or its archived inputs.
+converts hectares to km2 before division by city area. The reported G0 model
+retains its archived inputs and units.
 
 The sign scan compares predicted values at the high and low ends of the
 reclamation range. It is an endpoint contrast, not a local derivative or a fitted
@@ -69,17 +69,16 @@ boundary patch cannot establish that version by itself.
 
 Model-performance exports must identify the actual selected model or ensemble
 and keep calibration, validation and external evaluation partitions separate.
-Do not compare a historical species summary with a later clean fit as though
-they were the same accepted projection. Good discrimination does not demonstrate
-absence of occurrence-sampling bias.
+Historical species summaries and later clean fits identify different model
+versions. Discrimination scores and occurrence-sampling bias require separate
+assessments.
 
 The 135-city selection comparison requires a verified city-identity crosswalk
-and measured excluded-city covariates. Do not invent aliases or sampling effort.
+and measured excluded-city covariates. Sampling-effort variables require their
+own source records.
 SEM reproduction requires an unambiguous original composite table and formula.
-Period-like filenames alone do not verify reclamation age. Stop only the affected
-analysis and retain its blocker in the evidence package.
+Reclamation-age analyses require documented period definitions. Record missing
+inputs against the affected analysis.
 
 Saved figures must retain their numeric source tables. Technical checks,
 numerical reproduction and scientific interpretation are reported separately.
-The evidence package provides manuscript and reviewer-response drafts; it does
-not edit submitted or working manuscript documents.

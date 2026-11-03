@@ -1,22 +1,43 @@
 # Observed HPC environment
 
-[hpc_environment_observed_20261013.csv](../metadata/hpc_environment_observed_20261013.csv) records two different evidence sources read on 2026-10-13. No packages were installed and no scientific scripts were executed to produce this profile.
+[hpc_environment_observed_20261013.csv](../metadata/hpc_environment_observed_20261013.csv)
+combines the paired-release session record with installed package descriptions
+read on 2026-10-13.
 
 ## Recorded paired-release session
 
-The paired release's existing `logs/session_information.txt` reports R 4.4.1 (2024-06-14), `aarch64-unknown-linux-gnu`, terra 1.7-78, mgcv 1.9-1, digest 0.6.37 and nlme 3.1-164. Loaded namespace versions are also transcribed into the CSV. Its original file SHA-256 is `cb64eb27d9f1a0fb789787d43859afbd38306aab43e48a329b548790978a6f43`; its observed modification time is 2026-10-12 12:31:53 UTC. Modification time is file metadata, not proof of the exact session capture time.
+The paired release's `logs/session_information.txt` reports R 4.4.1
+(2024-06-14), `aarch64-unknown-linux-gnu`, terra 1.7-78, mgcv 1.9-1,
+digest 0.6.37 and nlme 3.1-164. Loaded namespace versions are transcribed into
+the CSV. The original file SHA-256 is
+`cb64eb27d9f1a0fb789787d43859afbd38306aab43e48a329b548790978a6f43`.
+Its modification time was 2026-10-12 12:31:53 UTC; the session capture time
+was not independently established.
 
-This record identifies a paired-release analysis session. It does not establish the environment of every historical species fit, local city analysis or manuscript figure. Base packages listed without versions in the session output are not assigned inferred package versions.
+This session applies to the paired release. Historical species fits, local city
+analyses and figures require their own environment records. Package versions
+omitted from the session output remain unspecified in the CSV.
 
 ## Installed package descriptions
 
-The `installed_DESCRIPTION` rows describe the current package metadata in two explicitly scanned locations: the configured HPC user library with layout `renv/library/linux-ubuntu-focal/R-4.4/aarch64-unknown-linux-gnu`, and the R 4.4.1 base library. The CSV supplies package versions, recorded build information, DESCRIPTION SHA-256 values, observation time and the public scripts that contain literal library/require/namespace references. References include optional components and are not a minimal installation specification.
+The `installed_DESCRIPTION` rows cover the configured HPC user library,
+`renv/library/linux-ubuntu-focal/R-4.4/aarch64-unknown-linux-gnu`, and the
+R 4.4.1 base library. The CSV records package versions, build information,
+DESCRIPTION SHA-256 values, observation time and script references. These
+references include optional components; install the dependencies for the
+selected workflow.
 
-Of 73 referenced package names, 52 have an observed DESCRIPTION and 21 were not found in those two libraries. `NOT_FOUND_IN_SCANNED_LIBRARIES` does not mean a package is absent from every machine or every library. In particular, local city/SEM/GAM/figure workflows may use other environments. Their package versions remain unrecorded here; no missing version is guessed.
+Of 73 referenced packages, 52 had a DESCRIPTION file in the two libraries and
+21 were marked `NOT_FOUND_IN_SCANNED_LIBRARIES`. That status is specific to
+those locations. Versions in other local or server environments remain
+unrecorded.
 
-An installed DESCRIPTION establishes package metadata presence, not successful loading or compatible compiled dependencies. The profile does not capture the complete dependency graph, GDAL/GEOS/PROJ, Java/MaxEnt, system libraries, every R library search path or historical random-number state. The library directory's `renv` name does not establish that this repository contains an `renv.lock` or a restored environment.
-
-Use the recorded paired-session versions as concrete evidence when identifying a compatible downstream environment. Use the current DESCRIPTION snapshot to inspect available packages and remaining requirements. Preserve the historical fit's own environment records whenever available. This CSV is an observed environment profile, not a historical full-fit lockfile or a guarantee of numerical reproduction.
+Use the paired-session versions to identify a compatible downstream setup.
+Execution also depends on compiled libraries, GDAL/GEOS/PROJ, Java/MaxEnt and
+the R library search path. The CSV records observed metadata rather than a
+complete dependency lock or package-loading test. The repository currently
+has no `renv.lock`; preserve the environment and random-number records for
+each historical fit.
 
 ## Local implementation checks on 2026-11-03
 
@@ -25,9 +46,8 @@ sf packages reported builds under R 4.5.2. Native-exclusion, polygon-partition,
 whole-city weighting and synthetic raster-comparison checks exited successfully.
 The pseudo-absence helper's `--unit-only` checks also exited successfully.
 
-The optional synthetic BIOMOD formatting check reached its count and membership
-assertions, then the process terminated with Windows native exit code
-`-1073741819`. That integration run is recorded as a failed process; successful
-assertions alone do not establish a working BIOMOD runtime. Recheck the formatter
-in a compatible environment before using preparation outputs. This check fitted
-no species distribution models and used no manuscript inputs.
+The optional synthetic BIOMOD formatting check passed its count and membership
+assertions, then terminated with Windows native exit code `-1073741819`.
+The process failed, so formatting needs a repeat check in a compatible runtime
+before the preparation workflow is used. The test used synthetic inputs and
+performed no model fitting.

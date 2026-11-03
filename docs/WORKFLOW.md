@@ -2,14 +2,10 @@
 
 Run from the repository root using an R environment compatible with the supplied model objects. Copy config/config.example.R to config/config.local.R first. Input paths remain external; output paths are configured separately. Do not place credentials in tracked files.
 
-Use one maintained Git checkout per execution server. Record its branch and
-commit before execution, and keep run-specific results and logs outside it.
-Update only a clean checkout whose scripts are not being consumed by active
-jobs. An offline deployment may use a verified Git bundle; import it into the
-same checkout, verify the commit and run the repository layout check. Set the
-remote to the upstream repository for normal updates when network access is
-available. Historical production snapshots remain provenance assets until their
-replacement and preservation are verified.
+Use one Git checkout per execution server and record the commit for each run.
+Keep results and logs outside the checkout. Update a clean working tree after
+jobs using its scripts have finished; verify imported Git bundles with the
+repository layout check. Retain the frozen sources for historical runs.
 
 ## Main analysis
 
@@ -31,7 +27,9 @@ Rscript code/07_pca_sem/fit_sem.R
 Rscript code/08_gam/scale_dependence.R
 ```
 
-These commands run analyses; they are not data-download or syntax-check commands. Set all required paths and install the script dependencies before execution. The batch index selects species in the input roster. Do not combine output directories from different model configurations.
+These examples execute analyses. Configure paths and install dependencies first.
+The batch index selects species from the input roster. Use a separate output
+directory for each model configuration.
 
 ## Environment-only sensitivity
 
@@ -43,13 +41,14 @@ The production scripts generate two continuous means, a shared count raster, glo
 
 Species modelling uses biomod2, terra, sf, usdm, spThin, dplyr and supporting packages loaded in each script. City analyses also use mgcv, gratia, piecewiseSEM, lme4, ggplot2, patchwork, openxlsx, rstatix and plotting helpers. Install packages separately. BIOMOD2 objects should be read with a compatible package version. The plotbiomes package is required only for the biome-context panel.
 
-See [ENVIRONMENT](ENVIRONMENT.md) for a recorded paired-release R session and the observed 2026-10-13 HPC package descriptions. This evidence does not lock all historical or local analysis environments.
+See [ENVIRONMENT](ENVIRONMENT.md) for the paired-release R session, installed
+package records and local runtime checks.
 
 ## Practical limits
 
 For the downstream revision programme, see [REVIEWER_SENSITIVITY](REVIEWER_SENSITIVITY.md).
 Its modules reuse accepted projections and the boundary-updated city table,
 compare explicit GAM formulations and retain one external article evidence root.
-They do not refit species models or replace the historical response.
+Historical responses and paired sensitivity responses retain separate labels.
 
 Use the archived score/composite tables for the manuscript's downstream results. Loading-table PCA includes reclamation and aspect where the GAM-score PCA does not. The precise SEM preprocessing selection is not fully specified, so fresh composite construction is not guaranteed to reproduce the reported coefficients. Regional plots and figure layouts may require the supplied source-data tables. The historical main response and the paired sensitivity use different species sets and aggregation scales; retain their labels and contributor manifests.

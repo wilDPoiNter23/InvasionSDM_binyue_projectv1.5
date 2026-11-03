@@ -1,42 +1,43 @@
 # Reproducibility status
 
-The repository supplies analysis implementations and statistical figure components. A syntax pass establishes that source can be parsed; reproducing manuscript numbers additionally requires the matching external inputs, saved model metadata, package environment and figure/table version.
+Reproducing an analysis requires its source version, external inputs, saved model
+metadata and compatible software. This page describes the available checks and
+the inputs needed for historical replication.
 
 ## Static validation
 
-The working revision branch is `reviewer-sensitivity`; the earlier integration
-branch is `publication-integration`. Historical commit identifiers continue to
-identify the same source versions after a branch name changes.
+Current revision code is on `reviewer-sensitivity`. The earlier integration
+version remains on `publication-integration`; use commit IDs to identify exact
+source versions.
 
 Run from the repository root with Python 3, Rscript and Bash available:
 
 ```sh
+python scripts/check_repository_layout.py
 python tools/validate_publication.py
 ```
 
-If those executables are outside PATH, supply `--rscript /path/to/Rscript` and `--bash /path/to/bash`. Using an absolute path to `tools/validate_publication.py` allows the check to run from another directory. This command parses R and Python, checks Bash syntax, checks local Markdown links, verifies literal `publication_path` aliases against the example configuration and checks the eleven preserved source checksums. It does not install packages, source R scripts, load scientific data, submit jobs or run models. Missing checking executables produce a failed check rather than a false pass.
+Supply `--rscript /path/to/Rscript` and `--bash /path/to/bash` when these
+executables are outside PATH. The validator checks R, Python and Bash syntax,
+local Markdown links, `publication_path` aliases and eleven archived source
+checksums. It runs without scientific inputs or model execution and fails if a
+required checking executable is unavailable. Check JavaScript modules separately
+with `node --check`.
 
-## Focused implementation checks
-
-The 2026-11-03 maintenance checks cover pending preparation, response-comparison
-and figure scripts, alongside the locally committed revision additions. The
-layout checker and static validator check public-file placement, source syntax,
-local links, configuration aliases and preserved source bytes. Check JavaScript
-modules separately with `node --check`.
+## Implementation tests
 
 Small synthetic fixtures check binary thresholds and coverage denominators,
 incomplete products and resume protection, observation dates and duplicates,
 native exclusions versus genuinely missing predictions, geometric partitions,
 whole-city area weights and ratio definitions. The ensemble evaluator provides
 `--self-test` for its ranking, training-cutoff and training-only member-selection
-helpers. These checks use synthetic records and temporary files rather than
-recreating manuscript results. Python observation fixtures require `duckdb`;
+helpers. These tests use synthetic records and temporary files. Python
+observation fixtures require `duckdb`;
 the geospatial R fixtures require the packages declared by their scripts.
 
 The optional workbook exporter additionally needs the separately supplied
 `@oai/artifact-tool` JavaScript runtime. Its package and dependency lock are not
-distributed here. The saved CSV tables remain the portable source-data route;
-JavaScript syntax validation alone does not verify workbook execution.
+distributed here. Saved CSV tables provide a portable source-data route.
 
 The fitted-model entrypoints retain their legacy pseudo-absence settings. Their
 explicit `--prepare-pa` mode exits before fitting and is documented in
@@ -44,8 +45,8 @@ explicit `--prepare-pa` mode exits before fitting and is documented in
 period/lag/residual figure entry remains the default; saved absolute-area model
 figures use its explicit `--absolute-area` mode. New data-dependent verifiers
 require the matching saved models, source tables and external configuration.
-Passing implementation checks establishes those tested contracts, while
-manuscript numerical reproduction still requires the corresponding real inputs.
+Use the matching real inputs to check manuscript values after the implementation
+tests pass.
 
 Two narrower verification scopes remain: the local-slope verifier checks saved
 grid and band consistency without independently rebuilding all support and
@@ -56,11 +57,22 @@ by `verify_absolute_area_models.R`.
 
 ## Source coverage
 
-The paired sensitivity has eleven production-source files in the preserved source archive. Their SHA-256 values are recorded in [archived_source_checksums.csv](../metadata/archived_source_checksums.csv); the public files matched those archived original bytes at the 2026-10-13 review. These include input freezing, input validation, species fitting/helpers, shared-denominator aggregation, independent sampled-cell checking, raster/city comparison, attrition diagnostics, the city association and two submission templates. This is a source-preservation claim, not a new acceptance of results.
+Eleven paired-sensitivity production files retain the bytes preserved in the
+source archive, as checked on 2026-10-13. Their SHA-256 values are recorded in
+[archived_source_checksums.csv](../metadata/archived_source_checksums.csv).
+They cover input freezing and validation, species fitting, shared-denominator
+aggregation, sampled-cell checks, raster/city comparisons, attrition, city
+associations and submission templates.
 
-The original archive also preserves scientific and audit sources outside this curated public workflow. It is not a substitute for the public analysis entrypoints, and the total archive file count is not the number of manuscript analyses. Historical scripts and later sensitivities must retain their different response definitions and species sets.
+The archive also contains older source variants. Select the version matching
+the response definition and species set for the analysis being reproduced.
 
-The previous public layout is pinned at Git commit [`141bca2d60ee9bdc6f9572131d07a76debb0858b`](https://github.com/wilDPoiNter23/InvasionSDM_binyue_projectv1.5/tree/141bca2d60ee9bdc6f9572131d07a76debb0858b). This curated version substantially reorganizes and supplements that layout; it is not a byte-identical historical workflow. Earlier integration commits corrected occurrence ingestion defects, including duplicate database insertion and writing the wrong cleaned-table object. Those corrections can change regenerated occurrence inputs. To reconstruct historical outputs, use frozen original inputs and the corresponding writer scripts from that Git baseline or the preserved source archive; do not assume that rerunning the cleaned pipeline reproduces historical manuscript numbers. The 2026-10-13 static-validation, checksum and documentation additions do not alter scientific analysis scripts, which is a narrower claim than equivalence of the whole integration branch to the historical workflow.
+The previous public layout is pinned at commit
+[`141bca2d60ee9bdc6f9572131d07a76debb0858b`](https://github.com/wilDPoiNter23/InvasionSDM_binyue_projectv1.5/tree/141bca2d60ee9bdc6f9572131d07a76debb0858b).
+The current layout adds analyses and corrects duplicate occurrence insertion
+and cleaned-table writing. These corrections can change regenerated inputs.
+Historical replication therefore uses the frozen inputs and their matching
+writer scripts from that baseline or the source archive.
 
 [METHODS_CODE_MAP](METHODS_CODE_MAP.md) lists the main analyses and figure components. Coverage has these practical limits:
 
@@ -70,16 +82,30 @@ The previous public layout is pinned at Git commit [`141bca2d60ee9bdc6f9572131d0
 | Species SDM and projections | Three-fold batch and separate five-fold implementation | Choose the saved design/options and package versions for the corresponding fitted objects |
 | Historical manuscript aggregate | Aggregation implementation and staged normalized raster | Bind the exact historical writer, successful contributor list and projection versions to the deposited raster |
 | PCA, SEM and city effects | Loading/composite equations, SEM fit and coefficient-based effects | Use archived composite/coefficient tables; the precise upstream SEM transformations and standardization are not fully specified |
-| GAM and sensitivity components | Model, surface, curve, raw-proxy and spatial scripts | Supply the exact score table and figure-specific summaries; no analysis was re-fitted during this review |
+| GAM and sensitivity components | Model, surface, curve, raw-proxy and spatial scripts | Supply the matching score table and figure-specific summaries |
 | Maps and multi-panel figures | Statistical components and listed source data | Final cartography, manual panel arrangement and figure/table version selection remain separate |
 | Supplementary Table 6 and Extended Data Table 3 | Manuscript source-data tables identified in the map | Their final tables are not reconstructed by substituting a different script or model |
 
 ## Open scientific and release requirements
 
-The historical contributor candidate manifest contains 737 rows, whereas `metadata/species_list.csv` contains 813 taxonomic names from the later preservation pool. Neither roster size proves the exact successful contributors to the historical manuscript raster. A writer/contributor/projection binding is still required; do not replace the historical denominator with 813 or with the 684 paired sensitivity taxa. The paired sensitivity begins with 814 candidates and uses its own frozen accepted set.
+The historical candidate manifest contains 737 rows; `metadata/species_list.csv`
+lists 813 taxa from the later preservation pool. The exact contributors to the
+historical raster still require a binding to its writer and projection files.
+Retain its original denominator. The paired sensitivity has a separate accepted
+set of 684 taxa drawn from 814 candidates.
 
-The SEM composite input has undergone upstream response/covariate preprocessing. The retained composite equations cannot establish every transformation choice or its order. Reconstructing a missing historical preprocessing script by guessing would create a new analysis. Use the archived input for downstream reproduction and retain this limitation until original preprocessing evidence is located.
+The SEM composite table includes upstream response and covariate transformations
+whose full order and settings remain unresolved. Use the archived table to
+reproduce the downstream coefficients; rebuilding it requires the original
+preprocessing specification.
 
-Exact external dataset editions, GBIF download identifiers, redistribution permissions, a data deposit identifier and the compatible R/package environment remain release requirements described in [DATA](DATA.md) and the [deposit plan](../zenodo/README.md). There is no locked package environment or declared code licence in this repository; the authors must select the code reuse licence. Passing static validation does not establish numerical reproduction, scientific acceptance or publication readiness.
+Release requirements include dataset editions, GBIF download identifiers,
+redistribution permissions, a deposit identifier and a compatible R/package
+environment. See [DATA](DATA.md) and the [deposit plan](../zenodo/README.md).
+The code licence and locked environment are still pending. Static checks cover
+source structure and syntax; release preparation also requires real-input
+numerical verification and resolution of the listed data and rights requirements.
 
-[ENVIRONMENT](ENVIRONMENT.md) supplies the observed paired-release session and installed HPC package metadata reviewed on 2026-10-13. These records narrow the environment uncertainty for that session and scanned libraries; they do not establish a historical full-fit lock or the missing local-analysis environment.
+[ENVIRONMENT](ENVIRONMENT.md) records the paired-release session, observed HPC
+packages and local runtime tests. Historical fits and local analyses require
+their corresponding environment records.
