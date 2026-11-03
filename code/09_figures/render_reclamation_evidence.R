@@ -1,3 +1,10 @@
+# Use --absolute-area for the separate saved-fit sensitivity figures.
+figure_args <- commandArgs(TRUE)
+if (length(figure_args) == 2L && figure_args[2] == "--absolute-area") {
+  figure_script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
+  source(file.path(dirname(figure_script), "render_reclamation_area_sensitivity.R"))
+  quit(save = "no", status = 0L)
+}
 # Render coastal reclamation evidence from verified source tables.
 # Usage: Rscript render_reclamation_evidence.R CONFIG.json
 suppressPackageStartupMessages({

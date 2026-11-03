@@ -93,8 +93,8 @@ figure <- ggplot(plot_data, aes(x = metric, y = score, fill = metric)) +
                colour = "#3C3C3C", linewidth = 0.39) +
   scale_fill_manual(values = palette) +
   scale_colour_manual(values = palette) +
-  scale_y_continuous(limits = c(-0.10, 1.02),
-                     breaks = c(0, 0.25, 0.50, 0.75, 1),
+  scale_y_continuous(limits = c(-1, 1.02),
+                     breaks = c(-1, -0.5, 0, 0.25, 0.50, 0.75, 1),
                      expand = expansion(mult = c(0, 0))) +
   labs(x = NULL, y = "Held-out validation score", tag = "b") +
   theme_classic(base_size = 7.5, base_family = "sans") +
