@@ -18,7 +18,12 @@ om<-file.path(root,'original.csv');write.csv(data.frame(accepted_taxon=c('a','b'
 empty<-put(rep(NA_real_,ncell(r)),'empty')
 im<-file.path(root,'inventory.tsv');write.table(data.frame(accepted_taxon=c('a','b','c'),baseline_global_projection_path=c(paths[1:2],empty)),im,sep='\t',row.names=FALSE,quote=FALSE)
 legacy<-ifelse(is.finite(f1),(f1-100)/700,0)/2+ifelse(is.finite(f2),as.numeric(f2>=500),0)/2
-arch<-put(legacy,'archive');cfg<-list(output_root=file.path(root,'results'),cities=citypath,city_id='name',reclamation_sources=list(HISTORICAL=recpath),surfaces=list(ARCHIVE=arch),historical_surface_label='ARCHIVE',paired_manifest=pm,original_manifest=om,full_inventory=im,exclude_city_keys=character(),workers=1,bootstrap_replicates=49,seed=42)
+joint1<-is.finite(f1)&is.finite(e1);joint2<-is.finite(f2)&is.finite(e2)
+joint_count<-as.integer(joint1)+as.integer(joint2)
+paired_mean<-function(x,y)ifelse(joint_count>0,(ifelse(joint1,x,0)+ifelse(joint2,y,0))/(1000*joint_count),NA_real_)
+paired_full<-put(paired_mean(f1,f2),'stored_paired_full')
+paired_env<-put(paired_mean(e1,e2),'stored_paired_env')
+arch<-put(legacy,'archive');cfg<-list(output_root=file.path(root,'results'),cities=citypath,city_id='name',reclamation_sources=list(HISTORICAL=recpath),surfaces=list(ARCHIVE=arch,STORED_PAIRED_FULL=paired_full,STORED_PAIRED_ENV=paired_env),historical_surface_label='ARCHIVE',paired_manifest=pm,original_manifest=om,full_inventory=im,exclude_city_keys=character(),workers=1,bootstrap_replicates=49,seed=42)
 cp<-file.path(root,'config.json');write_json(cfg,cp,auto_unbox=TRUE)
 exe<-file.path(R.home('bin'),'Rscript')
 stopifnot(system2(exe,c(shQuote(script),shQuote(cp),'prepare'))==0)

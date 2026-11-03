@@ -8,6 +8,31 @@ write_table<-function(x,name)write.csv(x,file.path(out,name),row.names=FALSE)
 area<-common_polygon_area
 native<-function(x,cr){st_set_crs(st_transform(st_geometry(x),cr),NA)}
 read_cells<-function(path,xy){r<-rast(path);stopifnot(nlyr(r)==1L);d<-extract(r,xy);as.numeric(d[[ncol(d)]])}
+# Bind local TIFF or paired GRD sources to their bytes, including backing files.
+raster_source_identity<-function(path){
+ if(!file.exists(path)||dir.exists(path))stop('Raster source must be an existing local file: ',path)
+ path<-normalizePath(path,winslash='/',mustWork=TRUE)
+ extension<-tolower(tools::file_ext(path))
+ if(!extension%in%c('tif','tiff','grd'))stop('Unverified raster descriptor format; use a local TIFF or paired GRD source: ',path)
+ info<-fromJSON(paste(describe(path,options='json'),collapse='\n'))
+ if(is.null(info$driverShortName)||!info$driverShortName%in%c('GTiff','RRASTER')||!length(info$files))
+  stop('Raster driver does not provide a supported local file inventory: ',path)
+ files<-unique(c(path,as.character(info$files)))
+ if(extension=='grd'){
+  backing<-paste0(tools::file_path_sans_ext(path),c('.gri','.GRI'))
+  backing<-backing[file.exists(backing)]
+  if(!length(backing))stop('GRD backing data file is unavailable: ',path)
+  files<-unique(c(files,backing))
+ }
+ # Standard auxiliary files can affect masks, extrema or overview reads.
+ auxiliary<-unlist(lapply(c('.aux.xml','.ovr','.msk'),function(suffix)paste0(files,suffix)))
+ files<-unique(c(files,auxiliary[file.exists(auxiliary)]))
+ if(any(!file.exists(files))||any(dir.exists(files)))stop('Raster backing file inventory is not entirely local: ',path)
+ files<-sort(unique(normalizePath(files,winslash='/',mustWork=TRUE)))
+ list(version=1L,path=path,driver=info$driverShortName,
+  files=data.frame(path=files,bytes=unname(file.info(files)$size),
+   sha256=vapply(files,function(p)digest(file=p,algo='sha256'),character(1)),row.names=NULL))
+}
 if(phase=='prepare'){
  stopifnot(!file.exists(file.path(out,'prepare_receipt.json')))
  dir.create(out,recursive=TRUE,showWarnings=FALSE);dir.create(file.path(out,'tmp'),showWarnings=FALSE)
@@ -123,12 +148,19 @@ if(phase=='extract'){
  write_table(inputs,'species_inputs.csv')
  paths<-unique(inputs$path[inputs$exists]);values<-vector('list',length(paths));stats<-vector('list',length(paths));names(values)<-paths
  reference<-rast(support$grid_path)
+ support_identity<-digest(list(cells=cells,xy=xy),algo='sha256')
  dir.create(file.path(out,'input_cells'),showWarnings=FALSE)
  process_input<-function(i){
   path<-paths[i]
   cache<-file.path(out,'input_cells',paste0(digest(path,algo='sha256'),'.rds'))
+  source_identity<-raster_source_identity(path)
   if(file.exists(cache)){
-   saved<-readRDS(cache);stopifnot(length(saved$value)==length(cells),saved$metadata$path==path,saved$metadata$file_bytes==file.info(path)$size)
+   saved<-readRDS(cache)
+   if(is.null(saved$source_identity)||is.null(saved$support_identity)||
+      !identical(saved$source_identity,source_identity)||!identical(saved$support_identity,support_identity))
+    stop('Unverifiable or changed input-cell cache retained; use a fresh output_root to extract this source: ',path)
+   stopifnot(length(saved$value)==length(cells),saved$metadata$path==path,
+    identical(saved$metadata$sample_sha256,digest(saved$value,algo='sha256')))
    return(saved)
   }
   r<-rast(path);stopifnot(nlyr(r)==1L,compareGeom(reference,r,stopOnError=FALSE))
@@ -137,6 +169,8 @@ if(phase=='extract'){
   lo<-as.numeric(mm[1]);hi<-as.numeric(mm[2]);finite_range<-is.finite(lo)&&is.finite(hi)
   if(!finite_range){stopifnot(!any(is.finite(v)));lo<-hi<-NA_real_}
   ans<-list(value=v,metadata=data.frame(path=path,minimum=lo,maximum=hi,datatype=datatype(r),sample_finite=sum(is.finite(v)),sample_zero=sum(v==0,na.rm=TRUE),binary_filename=grepl('TSSbin',path),file_bytes=file.info(path)$size,modified_utc=format(file.info(path)$mtime,tz='UTC',usetz=TRUE),sample_sha256=digest(v,algo='sha256')))
+  if(!identical(source_identity,raster_source_identity(path)))stop('Raster source changed during extraction; cache not saved: ',path)
+  ans$source_identity<-source_identity;ans$support_identity<-support_identity
   saveRDS(ans,cache)
   if(i%%25==0L){cat('Input',i,'of',length(paths),'\n');flush.console();gc()}
   ans

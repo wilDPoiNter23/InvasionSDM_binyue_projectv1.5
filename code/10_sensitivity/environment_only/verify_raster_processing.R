@@ -13,6 +13,8 @@ for(path in sample_paths){cache<-readRDS(file.path(out,'input_cells',paste0(dige
  if(any(is.finite(v)))maximum_source_error<-max(maximum_source_error,max(abs(v-cache$value[ix]),na.rm=TRUE))
 };stopifnot(maximum_source_error<1e-9)
 pair_errors<-list()
+required_paired_surfaces<-paste0('STORED_PAIRED_',c('FULL','ENV'))
+if(!all(required_paired_surfaces%in%names(d$values)))stop('Paired verification requires STORED_PAIRED_FULL and STORED_PAIRED_ENV in configured surfaces')
 for(g in c('FULL','ENV')){
  rebuilt<-d$values[[paste0('PAIRED_',g,'__SCALE_JOINT_AVAILABLE')]];stored<-d$values[[paste0('STORED_PAIRED_',g)]]
  stopifnot(identical(is.finite(rebuilt),is.finite(stored)));delta<-max(abs(rebuilt-stored),na.rm=TRUE);stopifnot(delta<1e-7);pair_errors[[g]]<-delta

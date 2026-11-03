@@ -12,6 +12,12 @@ The configuration supplies `output_root`, `cities`, `city_id`, named
 The full inventory uses the existing sensitivity inventory schema. The original
 manifest uses the existing frozen original aggregation schema.
 
+Paired reconstruction verification additionally requires `surfaces` entries
+named `STORED_PAIRED_FULL` and `STORED_PAIRED_ENV`, containing the independently
+saved paired means on joint finite species support. These reference maps are
+required by `verify_raster_processing.R`; an extraction-only configuration
+without them cannot establish paired-surface reconstruction.
+
 All supplied city boundaries are assessed. Reclaimed polygons are united and
 clipped to the city in native raster coordinates; other urban land is the city
 minus that union. Exact overlap fractions multiplied by geodesic cell areas
