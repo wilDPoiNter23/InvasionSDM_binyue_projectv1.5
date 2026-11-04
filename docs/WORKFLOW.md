@@ -7,6 +7,32 @@ Keep results and logs outside the checkout. Update a clean working tree after
 jobs using its scripts have finished; verify imported Git bundles with the
 repository layout check. Retain the frozen sources for historical runs.
 
+## Starting from existing results
+
+For manuscript figures and tables, begin with the item in
+[METHODS_CODE_MAP](METHODS_CODE_MAP.md). Its numbering covers five main figures,
+21 supplementary figures and 15 supplementary tables. Reuse matching saved
+inputs and summaries before considering upstream computation.
+
+1. Configure external city tables, response rasters, geometries and model-summary
+   paths in `config/config.local.R`; see [DATA](DATA.md).
+2. For historical SEM and scale-dependent results, retain their archived
+   composite/PC tables and coefficient/curve exports. Loading-table PCA and
+   GAM-score PCA differ. The available SEM implementation and some GAM summaries
+   have method/version differences described in the index.
+3. For habitat and pathway panels, provide the saved model/result directories
+   and JSON configuration expected by the chosen renderer. The whole-city/
+   reclaimed-land renderer writes common profiles used by the FULL/ENV companion.
+   See [response comparisons](reclaimed_land_response_figures.md) and
+   [hierarchical/richness figures](species_richness_figures.md) for inputs.
+4. Retain numeric tables with component plots and arrange final panels separately.
+   Workflow/conceptual diagrams and satellite-image layouts also use separately
+   supplied artwork or spatial assets.
+
+Renderer usage appears at the start of each script. Some legacy analysis scripts
+fit models or expect an existing session; use their saved tables for historical
+values. The stages below describe upstream production when inputs need creating.
+
 ## Main analysis
 
 1. Prepare accepted species and city inventories with code/01_data_preparation. The taxonomic roster is distinct from the contributor list for any one suitability raster.
