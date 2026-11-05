@@ -1,0 +1,23 @@
+# Check the sampler against a known Gaussian posterior and crossed simulation.
+a<-commandArgs(TRUE);stopifnot(length(a)==1L)
+source(file.path(a[1],'coastal_bayes_core.R'))
+set.seed(34);n<-120;X<-cbind(1,rnorm(n));y<-drop(X%*%c(.3,.7))+rnorm(n,sd=.6)
+V<-solve(crossprod(X)/.36+diag(1/4,2));m<-drop(V%*%crossprod(X,y)/.36)
+z<-coastal_gibbs(X,y,list(),warmup=1000L,samples=6000L,thin=1L,seed=84L,fixed_variance=.36)
+stopifnot(max(abs(colMeans(z$beta)-m))<.025,max(abs(cov(z$beta)-V))<.003)
+set.seed(90);city<-rep(1:20,each=24);sp<-rep(1:12,40);zone<-rep(1:80,each=6)
+X<-cbind(1,rnorm(480));y<-drop(X%*%c(-.5,.4))+rnorm(20,0,.3)[city]+rnorm(12,0,.3)[sp]+rnorm(80,0,.2)[zone]+rnorm(480,0,.2)
+z<-coastal_gibbs(X,y,list(city,sp,zone),warmup=1500L,samples=4000L,thin=2L,seed=86L)
+q<-quantile(z$beta[,2],c(.025,.975));stopifnot(q[1]<.4,q[2]>.4,all(is.finite(z$beta)))
+cat('PASS_ANALYTICAL_POSTERIOR_AND_CROSSED_SIMULATION\n')
+set.seed(91);X<-cbind(1,rep(rnorm(80),each=6));y<-drop(X%*%c(-.5,.4))+rnorm(20,0,.3)[city]+rnorm(12,0,.3)[sp]+rnorm(80,0,.2)[zone]+rnorm(480,0,.2)
+ordinary<-coastal_gibbs(X,y,list(city,sp,zone),warmup=2000L,samples=12000L,thin=2L,seed=87L,zone_shift=FALSE)
+blocked<-coastal_gibbs(X,y,list(city,sp,zone),warmup=2000L,samples=12000L,thin=2L,seed=88L,zone_shift=TRUE)
+stopifnot(max(abs(colMeans(ordinary$beta)-colMeans(blocked$beta)))<.04,
+ abs(sd(ordinary$beta[,2])-sd(blocked$beta[,2]))<.02,
+ isTRUE(blocked$blocked_zone_shift),!ordinary$blocked_zone_shift)
+cat('PASS_BLOCKED_AND_COORDINATE_POSTERIOR_AGREEMENT\n')
+set.seed(94);X<-cbind(1,rep(rnorm(80),each=6),rep(rnorm(20),each=24));y<-drop(X%*%c(-.5,.4,-.3))+rnorm(20,0,.3)[city]+rnorm(12,0,.3)[sp]+rnorm(80,0,.2)[zone]+rnorm(480,0,.2)
+z<-coastal_gibbs(X,y,list(city,sp,zone),warmup=2000L,samples=8000L,thin=1L,seed=95L)
+stopifnot(quantile(z$beta[,3],.025)< -0.3,quantile(z$beta[,3],.975)> -0.3)
+cat('PASS_CITY_CONSTANT_COEFFICIENT_SIMULATION\n')

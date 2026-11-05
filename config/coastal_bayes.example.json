@@ -1,0 +1,13 @@
+{
+  "paired_manifest": "../analysis_inputs/paired_species_manifest.csv",
+  "joint_root": "../analysis_inputs/joint_year_landuse",
+  "city_input": "../analysis_inputs/city_gam_input.csv",
+  "exclude_city_keys": [],
+  "output_root": "../analysis_results/reclamation_age_use",
+  "model_directory": "models_multilevel",
+  "age_reference_year": 2020,
+  "warmup": 1500,
+  "samples": 4500,
+  "thin": 1,
+  "seed": 20261016
+}

@@ -2,6 +2,34 @@
 
 Run from the repository root using an R environment compatible with the supplied model objects. Copy config/config.example.R to config/config.local.R first. Input paths remain external; output paths are configured separately. Do not place credentials in tracked files.
 
+Use one Git checkout per execution server and record the commit for each run.
+Keep results and logs outside the checkout. Update a clean working tree after
+jobs using its scripts have finished; verify imported Git bundles with the
+repository layout check. Retain the frozen sources for historical runs.
+
+## Starting from existing results
+
+For manuscript figures and tables, begin with the item in
+[METHODS_CODE_MAP](METHODS_CODE_MAP.md). Its numbering covers five main figures,
+21 supplementary figures and 15 supplementary tables. Reuse matching saved
+inputs and summaries before considering upstream computation.
+
+1. Configure external city tables, response rasters, geometries and model-summary
+   paths in `config/config.local.R`; see [DATA](DATA.md).
+2. Load the archived composite/PC tables and coefficient/curve exports for the
+   SEM and scale-dependent analyses.
+3. For habitat and pathway panels, provide the saved model/result directories
+   and JSON configuration expected by the chosen renderer. The whole-city/
+   reclaimed-land renderer writes common profiles used by the FULL/ENV companion.
+   See [response comparisons](reclaimed_land_response_figures.md) and
+   [hierarchical/richness figures](species_richness_figures.md) for inputs.
+4. Retain numeric tables with component plots and arrange final panels separately.
+   Workflow/conceptual diagrams and satellite-image layouts also use separately
+   supplied artwork or spatial assets.
+
+Renderer usage appears at the start of each script. The stages below describe
+production of the upstream inputs.
+
 ## Main analysis
 
 1. Prepare accepted species and city inventories with code/01_data_preparation. The taxonomic roster is distinct from the contributor list for any one suitability raster.
@@ -22,11 +50,17 @@ Rscript code/07_pca_sem/fit_sem.R
 Rscript code/08_gam/scale_dependence.R
 ```
 
-These commands run analyses; they are not data-download or syntax-check commands. Set all required paths and install the script dependencies before execution. The batch index selects species in the input roster. Do not combine output directories from different model configurations.
+These examples execute analyses. Configure paths and install dependencies first.
+The batch index selects species from the input roster. Use a separate output
+directory for each model configuration.
 
 ## Environment-only sensitivity
 
-See ../code/10_sensitivity/environment_only/README.md. The paired analysis includes 684 accepted taxa and excludes 130 of the 814 candidates. It reuses stored designs, model options and accepted continuous FULL projections; human predictors are removed for the ENV fits. Ten candidate taxa required paired clean fits because ID was present. Continuous values are divided by 1000, with no per-species min–max normalization or new native-range mask. A species contributes to either mean only where both predictions are finite, giving identical per-cell denominators. The historical manuscript response remains separate.
+See the [environment-only workflow](../code/10_sensitivity/environment_only/README.md).
+It reuses stored designs, model options and FULL projections, and removes human
+predictors for the ENV fits. Continuous values are divided by 1000. A species
+contributes where both predictions are finite, giving the two means a shared
+per-cell denominator.
 
 The production scripts generate two continuous means, a shared count raster, global/city comparisons and QC tables. The optional city association uses the existing GAM formula and archived covariates on common matched complete cases. No binary aggregate is required.
 
@@ -34,8 +68,15 @@ The production scripts generate two continuous means, a shared count raster, glo
 
 Species modelling uses biomod2, terra, sf, usdm, spThin, dplyr and supporting packages loaded in each script. City analyses also use mgcv, gratia, piecewiseSEM, lme4, ggplot2, patchwork, openxlsx, rstatix and plotting helpers. Install packages separately. BIOMOD2 objects should be read with a compatible package version. The plotbiomes package is required only for the biome-context panel.
 
-See [ENVIRONMENT](ENVIRONMENT.md) for a recorded paired-release R session and the observed 2026-10-13 HPC package descriptions. This evidence does not lock all historical or local analysis environments.
+See [ENVIRONMENT](ENVIRONMENT.md) for the paired-release R session, installed
+package records and local runtime checks.
 
-## Practical limits
+## Further documentation
 
-Use the archived score/composite tables for the manuscript's downstream results. Loading-table PCA includes reclamation and aspect where the GAM-score PCA does not. The precise SEM preprocessing selection is not fully specified, so fresh composite construction is not guaranteed to reproduce the reported coefficients. Regional plots and figure layouts may require the supplied source-data tables. The historical main response and the paired sensitivity use different species sets and aggregation scales; retain their labels and contributor manifests.
+For the downstream revision programme, see [REVIEWER_SENSITIVITY](REVIEWER_SENSITIVITY.md).
+Its modules cover alternative GAM formulations, geographic influence and
+residual diagnostics.
+
+See [DATA](DATA.md) for input definitions and
+[REPRODUCIBILITY](REPRODUCIBILITY.md#model-definitions) for the PCA, SEM and
+GAM implementations.

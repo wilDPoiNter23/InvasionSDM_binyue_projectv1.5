@@ -1,6 +1,6 @@
 # Coastal reclamation and invasive-plant suitability
 
-This repository contains the code used to model the global distribution of invasive vascular plants and to examine how predicted invasion suitability varies across coastal reclamation and urban environmental gradients.
+Research code for modelling the global distribution of invasive vascular plants and examining predicted suitability across coastal reclamation and urban environmental gradients.
 
 The workflow links species occurrences and environmental predictors to species distribution models, multispecies suitability, city-level comparisons, PCA, SEM and scale-dependent GAMs. The environment-only sensitivity compares 684 taxa with accepted paired FULL and ENV predictions, from 814 candidate taxa.
 
@@ -25,17 +25,17 @@ The workflow links species occurrences and environmental predictors to species d
 
 ## Start
 
-Read [WORKFLOW](docs/WORKFLOW.md), obtain the files described in [DATA](docs/DATA.md), and copy config/config.example.R to config/config.local.R. Set the external data and output paths. Run scripts from the repository root. Model fitting is computationally expensive; downstream analyses can start from the supplied city tables and suitability raster.
+Read [WORKFLOW](docs/WORKFLOW.md), obtain the files described in [DATA](docs/DATA.md), and copy config/config.example.R to config/config.local.R. Set the external data and output paths. Run scripts from the repository root. Downstream analyses can start from existing city tables and suitability rasters; species model fitting requires substantially more computation.
 
 [METHODS_CODE_MAP](docs/METHODS_CODE_MAP.md) identifies the scripts for the manuscript analyses and figure components. The [data-package plan](zenodo/README.md) lists files intended for Zenodo; the deposit has not yet been published. Large inputs, fitted models and rasters are not stored in Git.
 
 ## Interpretation and reproduction
 
-The response is predicted invasion suitability, rather than observed establishment or propagule pressure. Scripts retain the original variable names, including risk in city tables. Use the supplied inputs and model-specific settings to reproduce the corresponding analysis. The loading-table PCA and GAM-score PCA use different variable groups; the archived SEM composite table is needed for the reported coefficient analysis. Conditional GAM sign changes are reported as area intervals rather than exact breakpoints.
+The models estimate invasion suitability. The legacy city variable `risk` denotes this modelled response, not observed establishment or propagule pressure. Each analysis requires its matching inputs and model settings. The loading-table PCA and GAM-score PCA use different variable groups; the reported SEM coefficients use the archived composite table. Conditional GAM sign changes are bracketed by sampled area intervals, not fitted breakpoints.
 
 Manual arrangement of figure panels is separate from the component plots. This repository provides the statistical calculations and component-generation scripts.
 
-See [REPRODUCIBILITY](docs/REPRODUCIBILITY.md) for source preservation, remaining historical lineage and SEM preprocessing requirements, and a static validation command that runs no analyses.
+See [REPRODUCIBILITY](docs/REPRODUCIBILITY.md) for validation commands, source versions and the input requirements for historical replication.
 
 ## Citation
 
