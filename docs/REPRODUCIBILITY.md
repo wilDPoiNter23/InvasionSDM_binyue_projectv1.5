@@ -84,7 +84,25 @@ writer scripts from that baseline or the source archive.
 | PCA, SEM and city effects | Loading/composite equations, SEM fit and coefficient-based effects | Use archived composite/coefficient tables; the precise upstream SEM transformations and standardization are not fully specified |
 | GAM and sensitivity components | Model, surface, curve, raw-proxy and spatial scripts | Supply the matching score table and figure-specific summaries |
 | Maps and multi-panel figures | Statistical components and listed source data | Final cartography, manual panel arrangement and figure/table version selection remain separate |
-| Supplementary Table 6 and Extended Data Table 3 | Manuscript source-data tables identified in the map | Their final tables are not reconstructed by substituting a different script or model |
+| Tables S10 and S13 | GAM smooth summaries and the quartile cross-tab | Use the selected GAM exports and retained cross-tab source table |
+
+## Model definitions
+
+`fit_sem.R` fits five linear equations with piecewiseSEM on archived composites.
+The latent-variable maximum-likelihood model described in the manuscript
+requires its corresponding executed source. City-effect calculations use the
+reported unstandardized coefficients.
+
+The archived Fig. 4a-c GAM summary and Tables S9-S10 use different model
+summaries/PC specifications; their selected fitted versions need reconciliation.
+Regional comparisons in `regional_effects.R` use Dunn Bonferroni, while the
+manuscript's FDR letters require their corresponding comparison table.
+The algorithm-weight block in `model_performance.R` uses calibration TSS;
+validation plots use the relevant held-out score exports.
+
+Loading-table PCA uses mean imputation and includes reclamation/aspect.
+GAM-score PCA uses complete cases and different variable groups. The loading
+script also expects an existing coordinate object in its session.
 
 ## Open scientific and release requirements
 

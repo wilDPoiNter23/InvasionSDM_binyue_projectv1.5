@@ -16,10 +16,8 @@ inputs and summaries before considering upstream computation.
 
 1. Configure external city tables, response rasters, geometries and model-summary
    paths in `config/config.local.R`; see [DATA](DATA.md).
-2. For historical SEM and scale-dependent results, retain their archived
-   composite/PC tables and coefficient/curve exports. Loading-table PCA and
-   GAM-score PCA differ. The available SEM implementation and some GAM summaries
-   have method/version differences described in the index.
+2. Load the archived composite/PC tables and coefficient/curve exports for the
+   SEM and scale-dependent analyses.
 3. For habitat and pathway panels, provide the saved model/result directories
    and JSON configuration expected by the chosen renderer. The whole-city/
    reclaimed-land renderer writes common profiles used by the FULL/ENV companion.
@@ -29,9 +27,8 @@ inputs and summaries before considering upstream computation.
    Workflow/conceptual diagrams and satellite-image layouts also use separately
    supplied artwork or spatial assets.
 
-Renderer usage appears at the start of each script. Some legacy analysis scripts
-fit models or expect an existing session; use their saved tables for historical
-values. The stages below describe upstream production when inputs need creating.
+Renderer usage appears at the start of each script. The stages below describe
+production of the upstream inputs.
 
 ## Main analysis
 
@@ -59,7 +56,11 @@ directory for each model configuration.
 
 ## Environment-only sensitivity
 
-See ../code/10_sensitivity/environment_only/README.md. The paired analysis includes 684 accepted taxa and excludes 130 of the 814 candidates. It reuses stored designs, model options and accepted continuous FULL projections; human predictors are removed for the ENV fits. Ten candidate taxa required paired clean fits because ID was present. Continuous values are divided by 1000, with no per-species min–max normalization or new native-range mask. A species contributes to either mean only where both predictions are finite, giving identical per-cell denominators. The historical manuscript response remains separate.
+See the [environment-only workflow](../code/10_sensitivity/environment_only/README.md).
+It reuses stored designs, model options and FULL projections, and removes human
+predictors for the ENV fits. Continuous values are divided by 1000. A species
+contributes where both predictions are finite, giving the two means a shared
+per-cell denominator.
 
 The production scripts generate two continuous means, a shared count raster, global/city comparisons and QC tables. The optional city association uses the existing GAM formula and archived covariates on common matched complete cases. No binary aggregate is required.
 
@@ -70,11 +71,12 @@ Species modelling uses biomod2, terra, sf, usdm, spThin, dplyr and supporting pa
 See [ENVIRONMENT](ENVIRONMENT.md) for the paired-release R session, installed
 package records and local runtime checks.
 
-## Practical limits
+## Further documentation
 
 For the downstream revision programme, see [REVIEWER_SENSITIVITY](REVIEWER_SENSITIVITY.md).
-Its modules reuse accepted projections and the boundary-updated city table,
-compare explicit GAM formulations and retain one external article evidence root.
-Historical responses and paired sensitivity responses retain separate labels.
+Its modules cover alternative GAM formulations, geographic influence and
+residual diagnostics.
 
-Use the archived score/composite tables for the manuscript's downstream results. Loading-table PCA includes reclamation and aspect where the GAM-score PCA does not. The precise SEM preprocessing selection is not fully specified, so fresh composite construction is not guaranteed to reproduce the reported coefficients. Regional plots and figure layouts may require the supplied source-data tables. The historical main response and the paired sensitivity use different species sets and aggregation scales; retain their labels and contributor manifests.
+See [DATA](DATA.md) for input definitions and
+[REPRODUCIBILITY](REPRODUCIBILITY.md#model-definitions) for the PCA, SEM and
+GAM implementations.
